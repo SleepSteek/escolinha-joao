@@ -491,13 +491,13 @@
     <script>
         const SUPABASE_URL = 'https://yiebvvxommfwljnxtoop.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpZWJ2dnhvbW1md2xqbnh0b29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxODY0NzcsImV4cCI6MjA5MTc2MjQ3N30.t3IjsedOeoeKo93SaWe6SRvnWv8axSgeR-OzUp_QyXI';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let jogadores = [];
         let jogadorEmEdicao = null;
 
         async function listarJogadoresDoBanco() {
             try {
-                const { data, error } = await supabase.from('jogadores').select('*');
+                const { data, error } = await supabaseClient.from('jogadores').select('*');
                 if (error) {
                     throw error;
                 }
@@ -511,7 +511,7 @@
 
         async function salvarJogadorNoBanco(jogador) {
             try {
-                const { error } = await supabase.from('jogadores').insert([jogador]);
+                const { error } = await supabaseClient.from('jogadores').insert([jogador]);
                 if (error) {
                     throw error;
                 }
@@ -524,7 +524,7 @@
 
         async function atualizarJogadorNoBanco(jogador) {
             try {
-                const { error } = await supabase
+                const { error } = await supabaseClient
                     .from('jogadores')
                     .update(jogador)
                     .eq('id', jogador.id);
@@ -540,7 +540,7 @@
 
         async function removerJogadorDoBanco(id) {
             try {
-                const { error } = await supabase.from('jogadores').delete().eq('id', id);
+                const { error } = await supabaseClient.from('jogadores').delete().eq('id', id);
                 if (error) {
                     throw error;
                 }
