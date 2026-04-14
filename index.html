@@ -247,9 +247,9 @@
 
         <!-- Navegação de Telas -->
         <div class="nav-telas">
-            <button class="btn-tela ativo" onclick="abrirTela('cadastro')">1. Cadastrar Jogador</button>
-            <button class="btn-tela" onclick="abrirTela('jogadores')">2. Listar Jogadores</button>
-            <button class="btn-tela" onclick="abrirTela('resumo')">3. Gerar Resumo</button>
+            <button class="btn-tela ativo" onclick="abrirTela('cadastro', this)">1. Cadastrar Jogador</button>
+            <button class="btn-tela" onclick="abrirTela('jogadores', this)">2. Listar Jogadores</button>
+            <button class="btn-tela" onclick="abrirTela('resumo', this)">3. Gerar Resumo</button>
         </div>
 
         <!-- TELA 1: Cadastro -->
@@ -570,12 +570,14 @@
             });
         }
 
-        function abrirTela(nomeTela) {
+        function abrirTela(nomeTela, botaoClicado = null) {
             document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
             document.getElementById(nomeTela).classList.add('ativa');
 
             document.querySelectorAll('.btn-tela').forEach(b => b.classList.remove('ativo'));
-            event.target.classList.add('ativo');
+            if (botaoClicado) {
+                botaoClicado.classList.add('ativo');
+            }
 
             if (nomeTela === 'jogadores') {
                 atualizarTabela();
