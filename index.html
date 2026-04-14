@@ -487,105 +487,68 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        const DB_NAME = 'escolinhaFutebolDB';
-        const DB_VERSION = 2;
-        const STORE_JOGADORES = 'jogadores';
-        const STORE_AVALIACOES = 'avaliacoes';
+        const SUPABASE_URL = 'SUA_URL_AQUI';
+        const SUPABASE_KEY = 'SUA_ANON_KEY_AQUI';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let jogadores = [];
         let jogadorEmEdicao = null;
 
-        function abrirBancoDados() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-                request.onupgradeneeded = function(evento) {
-                    const db = evento.target.result;
-                    if (!db.objectStoreNames.contains(STORE_JOGADORES)) {
-                        const store = db.createObjectStore(STORE_JOGADORES, { keyPath: 'id' });
-                        store.createIndex('matricula', 'matricula', { unique: false });
-                        store.createIndex('categoria', 'categoria', { unique: false });
-                        store.createIndex('posicao', 'posicao', { unique: false });
-                    }
-                    if (!db.objectStoreNames.contains(STORE_AVALIACOES)) {
-                        const storeAvaliacoes = db.createObjectStore(STORE_AVALIACOES, { keyPath: 'id' });
-                        storeAvaliacoes.createIndex('jogadorId', 'jogadorId', { unique: false });
-                        storeAvaliacoes.createIndex('dataAvaliacao', 'dataAvaliacao', { unique: false });
-                    }
-                };
-
-                request.onsuccess = function() {
-                    resolve(request.result);
-                };
-
-                request.onerror = function() {
-                    reject(request.error);
-                };
-            });
-        }
-
         async function listarJogadoresDoBanco() {
-            const db = await abrirBancoDados();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(STORE_JOGADORES, 'readonly');
-                const store = tx.objectStore(STORE_JOGADORES);
-                const request = store.getAll();
-
-                request.onsuccess = function() {
-                    resolve(request.result || []);
-                };
-                request.onerror = function() {
-                    reject(request.error);
-                };
-            });
+            try {
+                const { data, error } = await supabase.from('jogadores').select('*');
+                if (error) {
+                    throw error;
+                }
+                return data || [];
+            } catch (erro) {
+                console.error('Erro ao listar jogadores:', erro);
+                alert('Não foi possível listar os jogadores no Supabase.');
+                throw erro;
+            }
         }
 
         async function salvarJogadorNoBanco(jogador) {
-            const db = await abrirBancoDados();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(STORE_JOGADORES, 'readwrite');
-                const store = tx.objectStore(STORE_JOGADORES);
-                store.add(jogador);
-
-                tx.oncomplete = function() {
-                    resolve();
-                };
-                tx.onerror = function() {
-                    reject(tx.error);
-                };
-            });
+            try {
+                const { error } = await supabase.from('jogadores').insert([jogador]);
+                if (error) {
+                    throw error;
+                }
+            } catch (erro) {
+                console.error('Erro ao salvar jogador:', erro);
+                alert('Não foi possível salvar o jogador no Supabase.');
+                throw erro;
+            }
         }
 
         async function atualizarJogadorNoBanco(jogador) {
-            const db = await abrirBancoDados();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(STORE_JOGADORES, 'readwrite');
-                const store = tx.objectStore(STORE_JOGADORES);
-                store.put(jogador);
-
-                tx.oncomplete = function() {
-                    resolve();
-                };
-                tx.onerror = function() {
-                    reject(tx.error);
-                };
-            });
+            try {
+                const { error } = await supabase
+                    .from('jogadores')
+                    .update(jogador)
+                    .eq('id', jogador.id);
+                if (error) {
+                    throw error;
+                }
+            } catch (erro) {
+                console.error('Erro ao atualizar jogador:', erro);
+                alert('Não foi possível atualizar o jogador no Supabase.');
+                throw erro;
+            }
         }
 
         async function removerJogadorDoBanco(id) {
-            const db = await abrirBancoDados();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(STORE_JOGADORES, 'readwrite');
-                const store = tx.objectStore(STORE_JOGADORES);
-                store.delete(id);
-
-                tx.oncomplete = function() {
-                    resolve();
-                };
-                tx.onerror = function() {
-                    reject(tx.error);
-                };
-            });
+            try {
+                const { error } = await supabase.from('jogadores').delete().eq('id', id);
+                if (error) {
+                    throw error;
+                }
+            } catch (erro) {
+                console.error('Erro ao remover jogador:', erro);
+                alert('Não foi possível remover o jogador no Supabase.');
+                throw erro;
+            }
         }
 
         async function carregarJogadores() {
@@ -604,40 +567,6 @@
                     return false;
                 }
                 return normalizarMatricula(jogador.matricula) === matriculaNormalizada;
-            });
-        }
-
-        async function salvarAvaliacaoNoBanco(avaliacao) {
-            const db = await abrirBancoDados();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(STORE_AVALIACOES, 'readwrite');
-                const store = tx.objectStore(STORE_AVALIACOES);
-                store.add(avaliacao);
-
-                tx.oncomplete = function() {
-                    resolve();
-                };
-                tx.onerror = function() {
-                    reject(tx.error);
-                };
-            });
-        }
-
-        async function listarAvaliacoesPorJogador(jogadorId) {
-            const db = await abrirBancoDados();
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction(STORE_AVALIACOES, 'readonly');
-                const store = tx.objectStore(STORE_AVALIACOES);
-                const request = store.index('jogadorId').getAll(jogadorId);
-
-                request.onsuccess = function() {
-                    const avaliacoes = request.result || [];
-                    avaliacoes.sort((a, b) => new Date(b.dataAvaliacao) - new Date(a.dataAvaliacao));
-                    resolve(avaliacoes);
-                };
-                request.onerror = function() {
-                    reject(request.error);
-                };
             });
         }
 
@@ -678,13 +607,15 @@
                 }
 
                 const jogador = {
-                    id: Date.now(),
                     nome: document.getElementById('nome').value,
                     matricula: matriculaInformada.trim(),
                     categoria: document.getElementById('categoria').value,
-                    data: document.getElementById('data').value,
+                    data_nascimento: document.getElementById('data').value,
                     posicao: document.getElementById('posicao').value,
-                    numero: document.getElementById('numero').value
+                    numero_camisa: Number(document.getElementById('numero').value),
+                    peso: null,
+                    altura: null,
+                    imc: null
                 };
 
                 await salvarJogadorNoBanco(jogador);
@@ -710,7 +641,7 @@
                     <td>${jogador.matricula}</td>
                     <td>${jogador.categoria}</td>
                     <td>${jogador.posicao}</td>
-                    <td>${jogador.numero}</td>
+                    <td>${jogador.numero_camisa}</td>
                     <td>
                         <button class="editar" onclick="abrirEdicao(${jogador.id})">Editar</button>
                         <button class="remover" onclick="removerJogador(${jogador.id})">Remover</button>
@@ -739,7 +670,7 @@
                     <td>${jogador.matricula}</td>
                     <td>${jogador.categoria}</td>
                     <td>${jogador.posicao}</td>
-                    <td>${jogador.numero}</td>
+                    <td>${jogador.numero_camisa}</td>
                     <td>
                         <button class="editar" onclick="abrirEdicao(${jogador.id})">Editar</button>
                         <button class="remover" onclick="removerJogador(${jogador.id})">Remover</button>
@@ -769,9 +700,9 @@
                 document.getElementById('editNome').value = jogadorEmEdicao.nome;
                 document.getElementById('editMatricula').value = jogadorEmEdicao.matricula;
                 document.getElementById('editCategoria').value = jogadorEmEdicao.categoria;
-                document.getElementById('editData').value = jogadorEmEdicao.data;
+                document.getElementById('editData').value = jogadorEmEdicao.data_nascimento;
                 document.getElementById('editPosicao').value = jogadorEmEdicao.posicao;
-                document.getElementById('editNumero').value = jogadorEmEdicao.numero;
+                document.getElementById('editNumero').value = jogadorEmEdicao.numero_camisa;
                 document.getElementById('modalEdicao').classList.add('ativo');
             }
         }
@@ -796,9 +727,9 @@
                     jogadorEmEdicao.nome = document.getElementById('editNome').value;
                     jogadorEmEdicao.matricula = matriculaEditada.trim();
                     jogadorEmEdicao.categoria = document.getElementById('editCategoria').value;
-                    jogadorEmEdicao.data = document.getElementById('editData').value;
+                    jogadorEmEdicao.data_nascimento = document.getElementById('editData').value;
                     jogadorEmEdicao.posicao = document.getElementById('editPosicao').value;
-                    jogadorEmEdicao.numero = document.getElementById('editNumero').value;
+                    jogadorEmEdicao.numero_camisa = Number(document.getElementById('editNumero').value);
 
                     await atualizarJogadorNoBanco(jogadorEmEdicao);
                     await carregarJogadores();
@@ -834,22 +765,37 @@
 
             const jogador = jogadores.find(j => j.id == id);
             if (jogador) {
-                const idade = calcularIdade(jogador.data);
+                const idade = calcularIdade(jogador.data_nascimento);
                 
                 document.getElementById('resumoNome').textContent = jogador.nome;
                 document.getElementById('resumoMatricula').textContent = jogador.matricula;
                 document.getElementById('resumoCategoria').textContent = jogador.categoria;
                 document.getElementById('resumoPosicao').textContent = jogador.posicao;
-                document.getElementById('resumoCamisa').textContent = jogador.numero;
+                document.getElementById('resumoCamisa').textContent = jogador.numero_camisa;
                 document.getElementById('resumoIdade').textContent = idade;
 
-                document.getElementById('altura').value = '';
-                document.getElementById('peso').value = '';
-                document.getElementById('imcResultado').style.display = 'none';
+                if (jogador.altura && jogador.peso) {
+                    document.getElementById('altura').value = jogador.altura;
+                    document.getElementById('peso').value = jogador.peso;
+                    document.getElementById('imcValor').textContent = Number(jogador.imc || 0).toFixed(2);
+                    document.getElementById('imcClassificacao').textContent = classificarIMC(Number(jogador.imc || 0));
+                    document.getElementById('imcResultado').style.display = 'block';
+                } else {
+                    document.getElementById('altura').value = '';
+                    document.getElementById('peso').value = '';
+                    document.getElementById('imcResultado').style.display = 'none';
+                }
                 document.getElementById('dataAvaliacao').valueAsDate = new Date();
 
                 document.getElementById('resumoContainer').style.display = 'block';
             }
+        }
+
+        function classificarIMC(imc) {
+            if (imc < 18.5) return 'Baixo peso';
+            if (imc < 25) return 'Peso normal';
+            if (imc < 30) return 'Sobrepeso';
+            return 'Obesidade';
         }
 
         function calcularIMC() {
@@ -860,11 +806,7 @@
                 const alturaMetros = altura / 100;
                 const imc = (peso / (alturaMetros * alturaMetros)).toFixed(2);
 
-                let classificacao = '';
-                if (imc < 18.5) classificacao = 'Baixo peso';
-                else if (imc < 25) classificacao = 'Peso normal';
-                else if (imc < 30) classificacao = 'Sobrepeso';
-                else classificacao = 'Obesidade';
+                const classificacao = classificarIMC(Number(imc));
 
                 document.getElementById('imcValor').textContent = imc;
                 document.getElementById('imcClassificacao').textContent = classificacao;
@@ -889,66 +831,29 @@
             const altura = parseFloat(document.getElementById('altura').value);
             const peso = parseFloat(document.getElementById('peso').value);
             const dataAvaliacao = document.getElementById('dataAvaliacao').value;
-            const imcTexto = document.getElementById('imcValor').textContent;
-            const classificacaoTexto = document.getElementById('imcClassificacao').textContent;
             const idade = document.getElementById('resumoIdade').textContent;
 
-            if (!dataAvaliacao || !altura || !peso || imcTexto === '-' || classificacaoTexto === '-') {
+            if (!dataAvaliacao || !altura || !peso) {
                 alert('Preencha data, altura e peso para registrar a avaliação.');
                 return;
             }
 
-            const avaliacaoAtual = {
-                id: Date.now(),
-                jogadorId: jogador.id,
-                nomeJogador: jogador.nome,
-                dataAvaliacao,
-                peso: Number(peso.toFixed(1)),
-                alturaCm: Number(altura.toFixed(1)),
-                alturaM: Number((altura / 100).toFixed(2)),
-                imc: Number(imcTexto),
-                classificacao: classificacaoTexto
-            };
-
+            const alturaEmMetros = altura / 100;
+            const imcCalculado = Number((peso / (alturaEmMetros * alturaEmMetros)).toFixed(2));
+            const classificacaoTexto = classificarIMC(imcCalculado);
             try {
-                await salvarAvaliacaoNoBanco(avaliacaoAtual);
+                await atualizarJogadorNoBanco({
+                    ...jogador,
+                    peso: Number(peso.toFixed(1)),
+                    altura: Number(altura.toFixed(1)),
+                    imc: imcCalculado
+                });
+                await carregarJogadores();
             } catch (erro) {
-                console.error('Erro ao salvar avaliação:', erro);
-                alert('Não foi possível salvar a avaliação.');
+                console.error('Erro ao salvar dados físicos do jogador:', erro);
+                alert('Não foi possível salvar os dados físicos no Supabase.');
                 return;
             }
-
-            let ultimasAvaliacoes = [];
-            try {
-                ultimasAvaliacoes = await listarAvaliacoesPorJogador(jogador.id);
-            } catch (erro) {
-                console.error('Erro ao carregar avaliações:', erro);
-                alert('Não foi possível carregar avaliações anteriores.');
-                return;
-            }
-
-            const linhasTabela = ultimasAvaliacoes.slice(0, 3).map(avaliacao => {
-                const dataLinha = new Date(avaliacao.dataAvaliacao);
-                const mes = dataLinha.toLocaleString('pt-BR', { month: 'long' });
-                const mesFormatado = mes.charAt(0).toUpperCase() + mes.slice(1);
-
-                return `
-                    <tr>
-                        <td>${mesFormatado}</td>
-                        <td>${avaliacao.nomeJogador}</td>
-                        <td>${avaliacao.peso}</td>
-                        <td>${avaliacao.alturaM.toFixed(2)}</td>
-                        <td>${avaliacao.imc.toFixed(2)}</td>
-                        <td>${avaliacao.classificacao}</td>
-                    </tr>
-                `;
-            }).join('');
-
-            const linhasTabelaFinal = linhasTabela || `
-                <tr>
-                    <td colspan="6">Nenhuma avaliação encontrada.</td>
-                </tr>
-            `;
 
             // Formatação da data para o cabeçalho
             const dataObj = new Date(dataAvaliacao);
@@ -1017,7 +922,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            ${linhasTabelaFinal}
+                            <tr>
+                                <td>${mesAvaliacao.charAt(0).toUpperCase() + mesAvaliacao.slice(1)}</td>
+                                <td>${nome}</td>
+                                <td>${Number(peso.toFixed(1))}</td>
+                                <td>${alturaEmMetros.toFixed(2)}</td>
+                                <td>${imcCalculado.toFixed(2)}</td>
+                                <td>${classificacaoTexto}</td>
+                            </tr>
                         </tbody>
                     </table>
 
@@ -1056,7 +968,7 @@
                 atualizarSeletorJogadores();
             } catch (erro) {
                 console.error('Erro ao inicializar aplicação:', erro);
-                alert('Erro ao carregar os dados do banco local.');
+                alert('Erro ao carregar os dados do Supabase.');
             }
         }
 
