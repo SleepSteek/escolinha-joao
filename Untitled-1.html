@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escolinha de Futebol - Cadastro de Jogadores</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            padding: 20px;
+            color: #e0e0e0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #2d2d2d;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+        h1 {
+            color: #4da6ff;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .tela {
+            display: none;
+        }
+        .tela.ativa {
+            display: block;
+        }
+        .nav-telas {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #444;
+        }
+        .btn-tela {
+            padding: 12px 20px;
+            border: none;
+            background-color: #3d3d3d;
+            color: #b0b0b0;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        .btn-tela:hover {
+            background-color: #4d4d4d;
+            color: #e0e0e0;
+        }
+        .btn-tela.ativo {
+            background-color: #0052cc;
+            color: #fff;
+            border-bottom-color: #4da6ff;
+        }
+        .section {
+            margin-bottom: 40px;
+        }
+        h2 {
+            color: #4da6ff;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #4da6ff;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #b0b0b0;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: #3d3d3d;
+            color: #e0e0e0;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #4da6ff;
+            box-shadow: 0 0 5px rgba(77, 166, 255, 0.5);
+        }
+        button {
+            background-color: #0052cc;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            margin-right: 10px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background-color: #0040a0;
+        }
+        button.secundario {
+            background-color: #555;
+        }
+        button.secundario:hover {
+            background-color: #666;
+        }
+        button.remover {
+            background-color: #cc3333;
+            padding: 8px 12px;
+            font-size: 14px;
+            margin: 0;
+        }
+        button.remover:hover {
+            background-color: #aa2222;
+        }
+        button.editar {
+            background-color: #0052cc;
+            padding: 8px 12px;
+            font-size: 14px;
+            margin: 0 5px 0 0;
+        }
+        button.editar:hover {
+            background-color: #0040a0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #444;
+        }
+        th {
+            background-color: #0052cc;
+            color: white;
+        }
+        tr:hover {
+            background-color: #3d3d3d;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .form-row.full {
+            grid-template-columns: 1fr;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+        .modal.ativo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #2d2d2d;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid #444;
+        }
+        .modal-header {
+            margin-bottom: 20px;
+        }
+        .modal-header h2 {
+            margin: 0;
+        }
+        .botoes-acao {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .resumo-card {
+            background-color: #3d3d3d;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4da6ff;
+        }
+        .resumo-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #444;
+        }
+        .resumo-item:last-child {
+            border-bottom: none;
+        }
+        .resumo-item label {
+            margin: 0;
+            font-weight: bold;
+            color: #4da6ff;
+        }
+        .resumo-item span {
+            color: #b0b0b0;
+        }
+        .imc-resultado {
+            background-color: #2a3a4a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            border: 2px solid #4da6ff;
+        }
+        .imc-resultado h3 {
+            color: #4da6ff;
+            margin-bottom: 10px;
+        }
+        .imc-valor {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4da6ff;
+        }
+        .imc-classificacao {
+            font-size: 16px;
+            color: #b0b0b0;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚽ Sul América Futebol Clube - Sistema de Cadastro e Resumo de Jogadores</h1>
+
+        <!-- Navegação de Telas -->
+        <div class="nav-telas">
+            <button class="btn-tela ativo" onclick="abrirTela('cadastro')">1. Cadastrar Jogador</button>
+            <button class="btn-tela" onclick="abrirTela('jogadores')">2. Listar Jogadores</button>
+            <button class="btn-tela" onclick="abrirTela('resumo')">3. Gerar Resumo</button>
+        </div>
+
+        <!-- TELA 1: Cadastro -->
+        <div id="cadastro" class="tela ativa">
+            <div class="section">
+                <h2>Cadastrar Jogador</h2>
+                <form id="formJogador">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nome">Nome:</label>
+                            <input type="text" id="nome" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="matricula">Matrícula:</label>
+                            <input type="text" id="matricula" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="categoria">Categoria:</label>
+                            <select id="categoria" required>
+                                <option value="">Selecione...</option>
+                                <option value="Sub-9">Sub-9</option>
+                                <option value="Sub-11">Sub-11</option>
+                                <option value="Sub-13">Sub-13</option>
+                                <option value="Sub-15">Sub-15</option>
+                                <option value="Sub-17">Sub-17</option>
+                                <option value="Sub-20">Sub-20</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="data">Data de Nascimento:</label>
+                            <input type="date" id="data" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="posicao">Posição:</label>
+                            <select id="posicao" required>
+                                <option value="">Selecione...</option>
+                                <option value="Goleiro">Goleiro</option>
+                                <option value="Zagueiro">Zagueiro</option>
+                                <option value="Lateral">Lateral</option>
+                                <option value="Meia">Meia</option>
+                                <option value="Atacante">Atacante</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="numero">Número da Camisa:</label>
+                            <input type="number" id="numero" min="1" max="99" required>
+                        </div>
+                    </div>
+                    <button type="submit">Cadastrar Jogador</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- TELA 2: Listar Jogadores -->
+        <div id="jogadores" class="tela">
+            <!-- Filtros -->
+            <div class="section">
+                <h2>Filtros</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="filtroposicao">Filtrar por Posição:</label>
+                        <select id="filtroposicao" onchange="aplicarFiltros()">
+                            <option value="">Todas</option>
+                            <option value="Goleiro">Goleiro</option>
+                            <option value="Zagueiro">Zagueiro</option>
+                            <option value="Lateral">Lateral</option>
+                            <option value="Meia">Meia</option>
+                            <option value="Atacante">Atacante</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filtrocategoria">Filtrar por Categoria:</label>
+                        <select id="filtrocategoria" onchange="aplicarFiltros()">
+                            <option value="">Todas</option>
+                            <option value="Sub-9">Sub-9</option>
+                            <option value="Sub-11">Sub-11</option>
+                            <option value="Sub-13">Sub-13</option>
+                            <option value="Sub-15">Sub-15</option>
+                            <option value="Sub-17">Sub-17</option>
+                            <option value="Sub-20">Sub-20</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela de Jogadores -->
+            <div class="section">
+                <h2>Jogadores Cadastrados</h2>
+                <table id="tabelaJogadores">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Matrícula</th>
+                            <th>Categoria</th>
+                            <th>Posição</th>
+                            <th>Camisa</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TELA 3: Resumo -->
+        <div id="resumo" class="tela">
+            <div class="section">
+                <h2>Gerar Resumo do Jogador</h2>
+                <div class="form-group">
+                    <label for="selecionarJogador">Selecione um Jogador:</label>
+                    <select id="selecionarJogador" onchange="carregarResumo()">
+                        <option value="">Escolha um jogador...</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="resumoContainer" style="display: none;">
+                <div class="section">
+                    <h2>Resumo do Jogador</h2>
+                    
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label for="dataAvaliacao">Data de Avaliação:</label>
+                            <input type="date" id="dataAvaliacao" required>
+                        </div>
+                    </div>
+
+                    <div class="resumo-card">
+                        <div class="resumo-item">
+                            <label>Nome:</label>
+                            <span id="resumoNome"></span>
+                        </div>
+                        <div class="resumo-item">
+                            <label>Matrícula:</label>
+                            <span id="resumoMatricula"></span>
+                        </div>
+                        <div class="resumo-item">
+                            <label>Categoria:</label>
+                            <span id="resumoCategoria"></span>
+                        </div>
+                        <div class="resumo-item">
+                            <label>Posição:</label>
+                            <span id="resumoPosicao"></span>
+                        </div>
+                        <div class="resumo-item">
+                            <label>Camisa:</label>
+                            <span id="resumoCamisa"></span>
+                        </div>
+                        <div class="resumo-item">
+                            <label>Idade (anos):</label>
+                            <span id="resumoIdade"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="altura">Altura (cm):</label>
+                            <input type="number" id="altura" min="100" max="220" step="0.1" oninput="calcularIMC()">
+                        </div>
+                        <div class="form-group">
+                            <label for="peso">Peso (kg):</label>
+                            <input type="number" id="peso" min="20" max="150" step="0.1" oninput="calcularIMC()">
+                        </div>
+                    </div>
+
+                    <div id="imcResultado" class="imc-resultado" style="display: none;">
+                        <h3>Resultado do IMC</h3>
+                        <div class="imc-valor" id="imcValor">-</div>
+                        <div class="imc-classificacao" id="imcClassificacao">-</div>
+                    </div>
+
+                    <div class="botoes-acao">
+                        <button onclick="imprimirResumo()">Imprimir Resumo</button>
+                        <button class="secundario" onclick="limparResumo()">Limpar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Edição -->
+    <div id="modalEdicao" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Editar Jogador</h2>
+            </div>
+            <form id="formEdicao">
+                <div class="form-group">
+                    <label for="editNome">Nome:</label>
+                    <input type="text" id="editNome" required>
+                </div>
+                <div class="form-group">
+                    <label for="editMatricula">Matrícula:</label>
+                    <input type="text" id="editMatricula" required>
+                </div>
+                <div class="form-group">
+                    <label for="editCategoria">Categoria:</label>
+                    <select id="editCategoria" required>
+                        <option value="Sub-9">Sub-9</option>
+                        <option value="Sub-11">Sub-11</option>
+                        <option value="Sub-13">Sub-13</option>
+                        <option value="Sub-15">Sub-15</option>
+                        <option value="Sub-17">Sub-17</option>
+                        <option value="Sub-20">Sub-20</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editData">Data de Nascimento:</label>
+                    <input type="date" id="editData" required>
+                </div>
+                <div class="form-group">
+                    <label for="editPosicao">Posição:</label>
+                    <select id="editPosicao" required>
+                        <option value="Goleiro">Goleiro</option>
+                        <option value="Zagueiro">Zagueiro</option>
+                        <option value="Lateral">Lateral</option>
+                        <option value="Meia">Meia</option>
+                        <option value="Atacante">Atacante</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="editNumero">Número da Camisa:</label>
+                    <input type="number" id="editNumero" min="1" max="99" required>
+                </div>
+                <div class="botoes-acao">
+                    <button type="submit">Salvar Alterações</button>
+                    <button type="button" class="secundario" onclick="fecharModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const DB_NAME = 'escolinhaFutebolDB';
+        const DB_VERSION = 2;
+        const STORE_JOGADORES = 'jogadores';
+        const STORE_AVALIACOES = 'avaliacoes';
+        let jogadores = [];
+        let jogadorEmEdicao = null;
+
+        function abrirBancoDados() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+                request.onupgradeneeded = function(evento) {
+                    const db = evento.target.result;
+                    if (!db.objectStoreNames.contains(STORE_JOGADORES)) {
+                        const store = db.createObjectStore(STORE_JOGADORES, { keyPath: 'id' });
+                        store.createIndex('matricula', 'matricula', { unique: false });
+                        store.createIndex('categoria', 'categoria', { unique: false });
+                        store.createIndex('posicao', 'posicao', { unique: false });
+                    }
+                    if (!db.objectStoreNames.contains(STORE_AVALIACOES)) {
+                        const storeAvaliacoes = db.createObjectStore(STORE_AVALIACOES, { keyPath: 'id' });
+                        storeAvaliacoes.createIndex('jogadorId', 'jogadorId', { unique: false });
+                        storeAvaliacoes.createIndex('dataAvaliacao', 'dataAvaliacao', { unique: false });
+                    }
+                };
+
+                request.onsuccess = function() {
+                    resolve(request.result);
+                };
+
+                request.onerror = function() {
+                    reject(request.error);
+                };
+            });
+        }
+
+        async function listarJogadoresDoBanco() {
+            const db = await abrirBancoDados();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_JOGADORES, 'readonly');
+                const store = tx.objectStore(STORE_JOGADORES);
+                const request = store.getAll();
+
+                request.onsuccess = function() {
+                    resolve(request.result || []);
+                };
+                request.onerror = function() {
+                    reject(request.error);
+                };
+            });
+        }
+
+        async function salvarJogadorNoBanco(jogador) {
+            const db = await abrirBancoDados();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_JOGADORES, 'readwrite');
+                const store = tx.objectStore(STORE_JOGADORES);
+                store.add(jogador);
+
+                tx.oncomplete = function() {
+                    resolve();
+                };
+                tx.onerror = function() {
+                    reject(tx.error);
+                };
+            });
+        }
+
+        async function atualizarJogadorNoBanco(jogador) {
+            const db = await abrirBancoDados();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_JOGADORES, 'readwrite');
+                const store = tx.objectStore(STORE_JOGADORES);
+                store.put(jogador);
+
+                tx.oncomplete = function() {
+                    resolve();
+                };
+                tx.onerror = function() {
+                    reject(tx.error);
+                };
+            });
+        }
+
+        async function removerJogadorDoBanco(id) {
+            const db = await abrirBancoDados();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_JOGADORES, 'readwrite');
+                const store = tx.objectStore(STORE_JOGADORES);
+                store.delete(id);
+
+                tx.oncomplete = function() {
+                    resolve();
+                };
+                tx.onerror = function() {
+                    reject(tx.error);
+                };
+            });
+        }
+
+        async function carregarJogadores() {
+            jogadores = await listarJogadoresDoBanco();
+            jogadores.sort((a, b) => b.id - a.id);
+        }
+
+        function normalizarMatricula(matricula) {
+            return String(matricula || '').trim().toLowerCase();
+        }
+
+        function existeMatriculaDuplicada(matricula, jogadorIdIgnorado = null) {
+            const matriculaNormalizada = normalizarMatricula(matricula);
+            return jogadores.some(jogador => {
+                if (jogadorIdIgnorado !== null && jogador.id === jogadorIdIgnorado) {
+                    return false;
+                }
+                return normalizarMatricula(jogador.matricula) === matriculaNormalizada;
+            });
+        }
+
+        async function salvarAvaliacaoNoBanco(avaliacao) {
+            const db = await abrirBancoDados();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_AVALIACOES, 'readwrite');
+                const store = tx.objectStore(STORE_AVALIACOES);
+                store.add(avaliacao);
+
+                tx.oncomplete = function() {
+                    resolve();
+                };
+                tx.onerror = function() {
+                    reject(tx.error);
+                };
+            });
+        }
+
+        async function listarAvaliacoesPorJogador(jogadorId) {
+            const db = await abrirBancoDados();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_AVALIACOES, 'readonly');
+                const store = tx.objectStore(STORE_AVALIACOES);
+                const request = store.index('jogadorId').getAll(jogadorId);
+
+                request.onsuccess = function() {
+                    const avaliacoes = request.result || [];
+                    avaliacoes.sort((a, b) => new Date(b.dataAvaliacao) - new Date(a.dataAvaliacao));
+                    resolve(avaliacoes);
+                };
+                request.onerror = function() {
+                    reject(request.error);
+                };
+            });
+        }
+
+        function abrirTela(nomeTela) {
+            document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+            document.getElementById(nomeTela).classList.add('ativa');
+
+            document.querySelectorAll('.btn-tela').forEach(b => b.classList.remove('ativo'));
+            event.target.classList.add('ativo');
+
+            if (nomeTela === 'jogadores') {
+                atualizarTabela();
+            } else if (nomeTela === 'resumo') {
+                atualizarSeletorJogadores();
+            }
+        }
+
+        function calcularIdade(dataNascimento) {
+            const hoje = new Date();
+            const nasc = new Date(dataNascimento);
+            let idade = hoje.getFullYear() - nasc.getFullYear();
+            const mes = hoje.getMonth() - nasc.getMonth();
+            if (mes < 0 || (mes === 0 && hoje.getDate() < nasc.getDate())) {
+                idade--;
+            }
+            return idade;
+        }
+
+        document.getElementById('formJogador').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            try {
+                await carregarJogadores();
+                const matriculaInformada = document.getElementById('matricula').value;
+                if (existeMatriculaDuplicada(matriculaInformada)) {
+                    alert('Já existe um jogador cadastrado com essa matrícula.');
+                    return;
+                }
+
+                const jogador = {
+                    id: Date.now(),
+                    nome: document.getElementById('nome').value,
+                    matricula: matriculaInformada.trim(),
+                    categoria: document.getElementById('categoria').value,
+                    data: document.getElementById('data').value,
+                    posicao: document.getElementById('posicao').value,
+                    numero: document.getElementById('numero').value
+                };
+
+                await salvarJogadorNoBanco(jogador);
+                await carregarJogadores();
+                this.reset();
+                atualizarTabela();
+                atualizarSeletorJogadores();
+                alert('Jogador cadastrado com sucesso!');
+            } catch (erro) {
+                console.error('Erro ao cadastrar jogador:', erro);
+                alert('Não foi possível cadastrar o jogador.');
+            }
+        });
+
+        function atualizarTabela() {
+            const tbody = document.querySelector('#tabelaJogadores tbody');
+            tbody.innerHTML = '';
+
+            jogadores.forEach(jogador => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${jogador.nome}</td>
+                    <td>${jogador.matricula}</td>
+                    <td>${jogador.categoria}</td>
+                    <td>${jogador.posicao}</td>
+                    <td>${jogador.numero}</td>
+                    <td>
+                        <button class="editar" onclick="abrirEdicao(${jogador.id})">Editar</button>
+                        <button class="remover" onclick="removerJogador(${jogador.id})">Remover</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function aplicarFiltros() {
+            const filtroposicao = document.getElementById('filtroposicao').value;
+            const filtrocategoria = document.getElementById('filtrocategoria').value;
+            const tbody = document.querySelector('#tabelaJogadores tbody');
+            tbody.innerHTML = '';
+
+            const jogadoresFiltrados = jogadores.filter(jogador => {
+                const posicaoOk = !filtroposicao || jogador.posicao === filtroposicao;
+                const categoriaOk = !filtrocategoria || jogador.categoria === filtrocategoria;
+                return posicaoOk && categoriaOk;
+            });
+
+            jogadoresFiltrados.forEach(jogador => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${jogador.nome}</td>
+                    <td>${jogador.matricula}</td>
+                    <td>${jogador.categoria}</td>
+                    <td>${jogador.posicao}</td>
+                    <td>${jogador.numero}</td>
+                    <td>
+                        <button class="editar" onclick="abrirEdicao(${jogador.id})">Editar</button>
+                        <button class="remover" onclick="removerJogador(${jogador.id})">Remover</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function removerJogador(id) {
+            if (confirm('Tem certeza que deseja remover este jogador?')) {
+                try {
+                    await removerJogadorDoBanco(id);
+                    await carregarJogadores();
+                    atualizarTabela();
+                    atualizarSeletorJogadores();
+                } catch (erro) {
+                    console.error('Erro ao remover jogador:', erro);
+                    alert('Não foi possível remover o jogador.');
+                }
+            }
+        }
+
+        function abrirEdicao(id) {
+            jogadorEmEdicao = jogadores.find(j => j.id === id);
+            if (jogadorEmEdicao) {
+                document.getElementById('editNome').value = jogadorEmEdicao.nome;
+                document.getElementById('editMatricula').value = jogadorEmEdicao.matricula;
+                document.getElementById('editCategoria').value = jogadorEmEdicao.categoria;
+                document.getElementById('editData').value = jogadorEmEdicao.data;
+                document.getElementById('editPosicao').value = jogadorEmEdicao.posicao;
+                document.getElementById('editNumero').value = jogadorEmEdicao.numero;
+                document.getElementById('modalEdicao').classList.add('ativo');
+            }
+        }
+
+        function fecharModal() {
+            document.getElementById('modalEdicao').classList.remove('ativo');
+            jogadorEmEdicao = null;
+        }
+
+        document.getElementById('formEdicao').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (jogadorEmEdicao) {
+                try {
+                    await carregarJogadores();
+                    const matriculaEditada = document.getElementById('editMatricula').value;
+                    if (existeMatriculaDuplicada(matriculaEditada, jogadorEmEdicao.id)) {
+                        alert('Já existe outro jogador cadastrado com essa matrícula.');
+                        return;
+                    }
+
+                    jogadorEmEdicao.nome = document.getElementById('editNome').value;
+                    jogadorEmEdicao.matricula = matriculaEditada.trim();
+                    jogadorEmEdicao.categoria = document.getElementById('editCategoria').value;
+                    jogadorEmEdicao.data = document.getElementById('editData').value;
+                    jogadorEmEdicao.posicao = document.getElementById('editPosicao').value;
+                    jogadorEmEdicao.numero = document.getElementById('editNumero').value;
+
+                    await atualizarJogadorNoBanco(jogadorEmEdicao);
+                    await carregarJogadores();
+                    fecharModal();
+                    atualizarTabela();
+                    atualizarSeletorJogadores();
+                    alert('Jogador atualizado com sucesso!');
+                } catch (erro) {
+                    console.error('Erro ao atualizar jogador:', erro);
+                    alert('Não foi possível atualizar o jogador.');
+                }
+            }
+        });
+
+        function atualizarSeletorJogadores() {
+            const selecao = document.getElementById('selecionarJogador');
+            selecao.innerHTML = '<option value="">Escolha um jogador...</option>';
+            
+            jogadores.forEach(jogador => {
+                const option = document.createElement('option');
+                option.value = jogador.id;
+                option.textContent = `${jogador.nome} (${jogador.posicao})`;
+                selecao.appendChild(option);
+            });
+        }
+
+        function carregarResumo() {
+            const id = document.getElementById('selecionarJogador').value;
+            if (!id) {
+                document.getElementById('resumoContainer').style.display = 'none';
+                return;
+            }
+
+            const jogador = jogadores.find(j => j.id == id);
+            if (jogador) {
+                const idade = calcularIdade(jogador.data);
+                
+                document.getElementById('resumoNome').textContent = jogador.nome;
+                document.getElementById('resumoMatricula').textContent = jogador.matricula;
+                document.getElementById('resumoCategoria').textContent = jogador.categoria;
+                document.getElementById('resumoPosicao').textContent = jogador.posicao;
+                document.getElementById('resumoCamisa').textContent = jogador.numero;
+                document.getElementById('resumoIdade').textContent = idade;
+
+                document.getElementById('altura').value = '';
+                document.getElementById('peso').value = '';
+                document.getElementById('imcResultado').style.display = 'none';
+                document.getElementById('dataAvaliacao').valueAsDate = new Date();
+
+                document.getElementById('resumoContainer').style.display = 'block';
+            }
+        }
+
+        function calcularIMC() {
+            const altura = parseFloat(document.getElementById('altura').value);
+            const peso = parseFloat(document.getElementById('peso').value);
+
+            if (altura && peso && altura > 0 && peso > 0) {
+                const alturaMetros = altura / 100;
+                const imc = (peso / (alturaMetros * alturaMetros)).toFixed(2);
+
+                let classificacao = '';
+                if (imc < 18.5) classificacao = 'Baixo peso';
+                else if (imc < 25) classificacao = 'Peso normal';
+                else if (imc < 30) classificacao = 'Sobrepeso';
+                else classificacao = 'Obesidade';
+
+                document.getElementById('imcValor').textContent = imc;
+                document.getElementById('imcClassificacao').textContent = classificacao;
+                document.getElementById('imcResultado').style.display = 'block';
+            }
+        }
+
+        async function imprimirResumo() {
+            const nome = document.getElementById('resumoNome').textContent;
+            if (!nome) {
+                alert('Selecione um jogador primeiro!');
+                return;
+            }   
+
+            const jogadorId = Number(document.getElementById('selecionarJogador').value);
+            const jogador = jogadores.find(j => j.id === jogadorId);
+            if (!jogador) {
+                alert('Jogador não encontrado.');
+                return;
+            }
+
+            const altura = parseFloat(document.getElementById('altura').value);
+            const peso = parseFloat(document.getElementById('peso').value);
+            const dataAvaliacao = document.getElementById('dataAvaliacao').value;
+            const imcTexto = document.getElementById('imcValor').textContent;
+            const classificacaoTexto = document.getElementById('imcClassificacao').textContent;
+            const idade = document.getElementById('resumoIdade').textContent;
+
+            if (!dataAvaliacao || !altura || !peso || imcTexto === '-' || classificacaoTexto === '-') {
+                alert('Preencha data, altura e peso para registrar a avaliação.');
+                return;
+            }
+
+            const avaliacaoAtual = {
+                id: Date.now(),
+                jogadorId: jogador.id,
+                nomeJogador: jogador.nome,
+                dataAvaliacao,
+                peso: Number(peso.toFixed(1)),
+                alturaCm: Number(altura.toFixed(1)),
+                alturaM: Number((altura / 100).toFixed(2)),
+                imc: Number(imcTexto),
+                classificacao: classificacaoTexto
+            };
+
+            try {
+                await salvarAvaliacaoNoBanco(avaliacaoAtual);
+            } catch (erro) {
+                console.error('Erro ao salvar avaliação:', erro);
+                alert('Não foi possível salvar a avaliação.');
+                return;
+            }
+
+            let ultimasAvaliacoes = [];
+            try {
+                ultimasAvaliacoes = await listarAvaliacoesPorJogador(jogador.id);
+            } catch (erro) {
+                console.error('Erro ao carregar avaliações:', erro);
+                alert('Não foi possível carregar avaliações anteriores.');
+                return;
+            }
+
+            const linhasTabela = ultimasAvaliacoes.slice(0, 3).map(avaliacao => {
+                const dataLinha = new Date(avaliacao.dataAvaliacao);
+                const mes = dataLinha.toLocaleString('pt-BR', { month: 'long' });
+                const mesFormatado = mes.charAt(0).toUpperCase() + mes.slice(1);
+
+                return `
+                    <tr>
+                        <td>${mesFormatado}</td>
+                        <td>${avaliacao.nomeJogador}</td>
+                        <td>${avaliacao.peso}</td>
+                        <td>${avaliacao.alturaM.toFixed(2)}</td>
+                        <td>${avaliacao.imc.toFixed(2)}</td>
+                        <td>${avaliacao.classificacao}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const linhasTabelaFinal = linhasTabela || `
+                <tr>
+                    <td colspan="6">Nenhuma avaliação encontrada.</td>
+                </tr>
+            `;
+
+            // Formatação da data para o cabeçalho
+            const dataObj = new Date(dataAvaliacao);
+            const mesAvaliacao = dataObj.toLocaleString('pt-BR', { month: 'long' });
+
+            const janela = window.open('', '', 'width=800,height=900');
+            
+            janela.document.write(`
+                <html>
+                <head>
+                    <title>Avaliação Física - ${nome}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+                        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+                        .header h1 { margin: 5px 0; font-size: 22px; text-transform: uppercase; }
+                        .header p { margin: 2px 0; font-weight: bold; }
+                        
+                        .info-atleta { margin-bottom: 20px; font-size: 16px; }
+                        
+                        .titulo-secao { background: #f2f2f2; padding: 5px 10px; font-weight: bold; margin-top: 20px; border-left: 5px solid #333; }
+                        
+                        .texto-intro { font-size: 14px; text-align: justify; margin: 15px 0; }
+                        
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #000; padding: 10px; text-align: center; }
+                        th { background-color: #f2f2f2; }
+                        
+                        .footer { margin-top: 100px; display: flex; justify-content: space-around; text-align: center; }
+                        .assinatura { border-top: 1px solid #000; width: 200px; padding-top: 5px; font-size: 12px; }
+                        
+                        @media print {
+                            button { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <p>PROJETO SOCIAL CONEXÃO COMUNITÁRIA</p>
+                        <h1>RELATÓRIO DE AVALIAÇÃO FÍSICA DO ATLETA</h1>
+                        <p>CONTROLE DE AVALIAÇÃO FISICA</p>
+                    </div>
+
+                    <div class="info-atleta">
+                        <strong>Nome do atleta:</strong> ${nome}<br>
+                        <strong>Mês da avaliação:</strong> ${mesAvaliacao}<br>
+                        <strong>Idade:</strong> ${idade} anos
+                    </div>
+
+                    <div class="titulo-secao">Introdução</div>
+                    <p class="texto-intro">
+                        A avaliação física é uma ferramenta essencial para o acompanhamento do desenvolvimento esportivo dos atletas, 
+                        permitindo identificar suas capacidades físicas, evolução e possíveis necessidades de ajuste no treinamento. 
+                        Através da análise de indicadores como composição corporal, índice de massa corporal (IMC) e desempenho físico, 
+                        é possível promover um treinamento mais seguro, eficiente e individualizado.
+                    </p>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mês</th>
+                                <th>Nome</th>
+                                <th>Peso (kg)</th>
+                                <th>Altura (m)</th>
+                                <th>IMC</th>
+                                <th>Classificação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${linhasTabelaFinal}
+                        </tbody>
+                    </table>
+
+                    <p class="texto-intro">
+                        Este relatório tem como objetivo registrar e monitorar as informações do atleta, contribuindo para a melhoria 
+                        do rendimento esportivo, prevenção de lesões e promoção da saúde.
+                    </p>
+
+                    <div class="footer">
+                        <div class="assinatura">Presidente Conexão Comunitária</div>
+                        <div class="assinatura">Coordenador Técnico</div>
+                    </div>
+                </body>
+                </html>
+            `);
+
+            janela.document.close();
+            // Pequeno delay para garantir que o estilo carregue antes de abrir a caixa de impressão
+            setTimeout(() => {
+                janela.print();
+            }, 250);
+        }
+
+        function limparResumo() {
+            document.getElementById('selecionarJogador').value = '';
+            document.getElementById('resumoContainer').style.display = 'none';
+            document.getElementById('altura').value = '';
+            document.getElementById('peso').value = '';
+            document.getElementById('imcResultado').style.display = 'none';
+        }
+
+        async function inicializarApp() {
+            try {
+                await carregarJogadores();
+                atualizarTabela();
+                atualizarSeletorJogadores();
+            } catch (erro) {
+                console.error('Erro ao inicializar aplicação:', erro);
+                alert('Erro ao carregar os dados do banco local.');
+            }
+        }
+
+        inicializarApp();
+    </script>
+</body>
+</html>
