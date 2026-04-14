@@ -243,7 +243,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>⚽ Sul América Futebol Clube - Sistema de Cadastro e Resumo de Jogadores</h1>
+        <h1>⚽ Associação Conexão Comunitária - Sistema de Cadastro e Resumo de Jogadores</h1>
 
         <!-- Navegação de Telas -->
         <div class="nav-telas">
@@ -504,7 +504,6 @@
                 return data || [];
             } catch (erro) {
                 console.error('Erro ao listar jogadores:', erro);
-                alert('Não foi possível listar os jogadores no Supabase.');
                 throw erro;
             }
         }
@@ -601,9 +600,8 @@
             e.preventDefault();
 
             try {
-                await carregarJogadores();
                 const matriculaInformada = document.getElementById('matricula').value;
-                if (existeMatriculaDuplicada(matriculaInformada)) {
+                if (jogadores.length > 0 && existeMatriculaDuplicada(matriculaInformada)) {
                     alert('Já existe um jogador cadastrado com essa matrícula.');
                     return;
                 }
@@ -621,14 +619,21 @@
                 };
 
                 await salvarJogadorNoBanco(jogador);
-                await carregarJogadores();
                 this.reset();
-                atualizarTabela();
-                atualizarSeletorJogadores();
                 alert('Jogador cadastrado com sucesso!');
+
+                // Tenta atualizar as telas, sem bloquear o cadastro se a listagem estiver indisponivel.
+                try {
+                    await carregarJogadores();
+                    atualizarTabela();
+                    atualizarSeletorJogadores();
+                } catch (erroListagem) {
+                    console.warn('Cadastro realizado, mas nao foi possivel atualizar listagem:', erroListagem);
+                }
             } catch (erro) {
                 console.error('Erro ao cadastrar jogador:', erro);
-                alert('Não foi possível cadastrar o jogador.');
+                const mensagemErro = erro?.message ? `\nDetalhes: ${erro.message}` : '';
+                alert(`Não foi possível cadastrar o jogador.${mensagemErro}`);
             }
         });
 
@@ -970,7 +975,8 @@
                 atualizarSeletorJogadores();
             } catch (erro) {
                 console.error('Erro ao inicializar aplicação:', erro);
-                alert('Erro ao carregar os dados do Supabase.');
+                const mensagemErro = erro?.message ? `\nDetalhes: ${erro.message}` : '';
+                alert(`Erro ao carregar os dados do Supabase.${mensagemErro}`);
             }
         }
 
