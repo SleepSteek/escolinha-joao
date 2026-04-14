@@ -250,6 +250,7 @@
             <button class="btn-tela ativo" onclick="abrirTela('cadastro', this)">1. Cadastrar Jogador</button>
             <button class="btn-tela" onclick="abrirTela('jogadores', this)">2. Listar Jogadores</button>
             <button class="btn-tela" onclick="abrirTela('resumo', this)">3. Gerar Resumo</button>
+            <button class="btn-tela" onclick="abrirTela('chamada', this)">4. Lista de Chamada</button>
         </div>
 
         <!-- TELA 1: Cadastro -->
@@ -302,6 +303,20 @@
                             <input type="number" id="numero" min="1" max="99" required>
                         </div>
                     </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="horario">Horário da Turma:</label>
+                            <select id="horario" required>
+                                <option value="">Selecione...</option>
+                                <option value="08:00">Turma das 08:00</option>
+                                <option value="09:00">Turma das 09:00</option>
+                                <option value="10:00">Turma das 10:00</option>
+                                <option value="14:00">Turma das 14:00</option>
+                                <option value="15:00">Turma das 15:00</option>
+                                <option value="16:00">Turma das 16:00</option>
+                            </select>
+                        </div>
+                    </div>
                     <button type="submit">Cadastrar Jogador</button>
                 </form>
             </div>
@@ -348,6 +363,7 @@
                             <th>Nome</th>
                             <th>Matrícula</th>
                             <th>Categoria</th>
+                            <th>Horário</th>
                             <th>Posição</th>
                             <th>Camisa</th>
                             <th>Ações</th>
@@ -433,6 +449,48 @@
                 </div>
             </div>
         </div>
+
+        <!-- TELA 4: Lista de Chamada -->
+        <div id="chamada" class="tela">
+            <div class="section">
+                <h2>Lista de Chamada para Impressão</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="turmaChamada">Selecione a turma:</label>
+                        <select id="turmaChamada" onchange="atualizarListaChamada()">
+                            <option value="">Selecione...</option>
+                            <option value="08:00">Turma das 08:00</option>
+                            <option value="09:00">Turma das 09:00</option>
+                            <option value="10:00">Turma das 10:00</option>
+                            <option value="14:00">Turma das 14:00</option>
+                            <option value="15:00">Turma das 15:00</option>
+                            <option value="16:00">Turma das 16:00</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="dataChamada">Data da aula:</label>
+                        <input type="date" id="dataChamada" onchange="atualizarListaChamada()">
+                    </div>
+                </div>
+                <div class="botoes-acao">
+                    <button type="button" onclick="imprimirListaChamada()">Imprimir Lista</button>
+                </div>
+            </div>
+            <div class="section">
+                <h2>Alunos da Turma</h2>
+                <table id="tabelaChamada">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Matrícula</th>
+                            <th>Categoria</th>
+                            <th>Presente</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <!-- Modal para Edição -->
@@ -479,6 +537,17 @@
                     <label for="editNumero">Número da Camisa:</label>
                     <input type="number" id="editNumero" min="1" max="99" required>
                 </div>
+                <div class="form-group">
+                    <label for="editHorario">Horário da Turma:</label>
+                    <select id="editHorario" required>
+                        <option value="08:00">Turma das 08:00</option>
+                        <option value="09:00">Turma das 09:00</option>
+                        <option value="10:00">Turma das 10:00</option>
+                        <option value="14:00">Turma das 14:00</option>
+                        <option value="15:00">Turma das 15:00</option>
+                        <option value="16:00">Turma das 16:00</option>
+                    </select>
+                </div>
                 <div class="botoes-acao">
                     <button type="submit">Salvar Alterações</button>
                     <button type="button" class="secundario" onclick="fecharModal()">Cancelar</button>
@@ -515,6 +584,10 @@
                     throw error;
                 }
             } catch (erro) {
+                if (erro?.message && erro.message.includes("Could not find the 'horario' column")) {
+                    alert("A coluna 'horario' não existe na tabela jogadores. Crie essa coluna no Supabase para usar a Lista de Chamada.");
+                    throw erro;
+                }
                 if (erro?.message && erro.message.includes("Could not find the 'altura' column")) {
                     const { altura, peso, imc, ...jogadorSemDadosFisicos } = jogador;
                     const { error } = await supabaseClient.from('jogadores').insert([jogadorSemDadosFisicos]);
@@ -540,8 +613,15 @@
                     throw error;
                 }
             } catch (erro) {
+                if (erro?.message && erro.message.includes("Could not find the 'horario' column")) {
+                    alert("A coluna 'horario' não existe na tabela jogadores. Crie essa coluna no Supabase para usar a Lista de Chamada.");
+                    throw erro;
+                }
                 if (erro?.message && erro.message.includes("Could not find the 'altura' column")) {
-                    const { altura, peso, imc, ...jogadorSemDadosFisicos } = jogador;
+                    const jogadorSemDadosFisicos = (() => {
+                        const { altura, peso, imc, ...j } = jogador;
+                        return j;
+                    })();
                     const { error } = await supabaseClient
                         .from('jogadores')
                         .update(jogadorSemDadosFisicos)
@@ -603,6 +683,8 @@
                 atualizarTabela();
             } else if (nomeTela === 'resumo') {
                 atualizarSeletorJogadores();
+            } else if (nomeTela === 'chamada') {
+                atualizarListaChamada();
             }
         }
 
@@ -634,6 +716,7 @@
                     data_nascimento: document.getElementById('data').value,
                     posicao: document.getElementById('posicao').value,
                     numero_camisa: Number(document.getElementById('numero').value),
+                    horario: document.getElementById('horario').value,
                     peso: null,
                     altura: null,
                     imc: null
@@ -648,6 +731,7 @@
                     await carregarJogadores();
                     atualizarTabela();
                     atualizarSeletorJogadores();
+                    atualizarListaChamada();
                 } catch (erroListagem) {
                     console.warn('Cadastro realizado, mas nao foi possivel atualizar listagem:', erroListagem);
                 }
@@ -668,6 +752,7 @@
                     <td>${jogador.nome}</td>
                     <td>${jogador.matricula}</td>
                     <td>${jogador.categoria}</td>
+                    <td>${jogador.horario || '-'}</td>
                     <td>${jogador.posicao}</td>
                     <td>${jogador.numero_camisa}</td>
                     <td>
@@ -697,6 +782,7 @@
                     <td>${jogador.nome}</td>
                     <td>${jogador.matricula}</td>
                     <td>${jogador.categoria}</td>
+                    <td>${jogador.horario || '-'}</td>
                     <td>${jogador.posicao}</td>
                     <td>${jogador.numero_camisa}</td>
                     <td>
@@ -731,6 +817,7 @@
                 document.getElementById('editData').value = jogadorEmEdicao.data_nascimento;
                 document.getElementById('editPosicao').value = jogadorEmEdicao.posicao;
                 document.getElementById('editNumero').value = jogadorEmEdicao.numero_camisa;
+                document.getElementById('editHorario').value = jogadorEmEdicao.horario || '08:00';
                 document.getElementById('modalEdicao').classList.add('ativo');
             }
         }
@@ -758,12 +845,14 @@
                     jogadorEmEdicao.data_nascimento = document.getElementById('editData').value;
                     jogadorEmEdicao.posicao = document.getElementById('editPosicao').value;
                     jogadorEmEdicao.numero_camisa = Number(document.getElementById('editNumero').value);
+                    jogadorEmEdicao.horario = document.getElementById('editHorario').value;
 
                     await atualizarJogadorNoBanco(jogadorEmEdicao);
                     await carregarJogadores();
                     fecharModal();
                     atualizarTabela();
                     atualizarSeletorJogadores();
+                    atualizarListaChamada();
                     alert('Jogador atualizado com sucesso!');
                 } catch (erro) {
                     console.error('Erro ao atualizar jogador:', erro);
@@ -817,6 +906,107 @@
 
                 document.getElementById('resumoContainer').style.display = 'block';
             }
+        }
+
+        function atualizarListaChamada() {
+            const horarioSelecionado = document.getElementById('turmaChamada').value;
+            const tbody = document.querySelector('#tabelaChamada tbody');
+            tbody.innerHTML = '';
+
+            if (!horarioSelecionado) {
+                return;
+            }
+
+            const alunosDaTurma = jogadores
+                .filter(jogador => jogador.horario === horarioSelecionado)
+                .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+
+            alunosDaTurma.forEach(jogador => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${jogador.nome}</td>
+                    <td>${jogador.matricula}</td>
+                    <td>${jogador.categoria}</td>
+                    <td><input type="checkbox" aria-label="Presença de ${jogador.nome}"></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function imprimirListaChamada() {
+            const horarioSelecionado = document.getElementById('turmaChamada').value;
+            const dataAula = document.getElementById('dataChamada').value;
+
+            if (!horarioSelecionado) {
+                alert('Selecione o horário da turma.');
+                return;
+            }
+
+            if (!dataAula) {
+                alert('Selecione a data da aula.');
+                return;
+            }
+
+            const alunosDaTurma = jogadores
+                .filter(jogador => jogador.horario === horarioSelecionado)
+                .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+
+            if (alunosDaTurma.length === 0) {
+                alert('Não há alunos cadastrados para esta turma.');
+                return;
+            }
+
+            const dataFormatada = new Date(`${dataAula}T00:00:00`).toLocaleDateString('pt-BR');
+            const linhasTabela = alunosDaTurma.map(jogador => `
+                <tr>
+                    <td>${jogador.nome}</td>
+                    <td>${jogador.matricula}</td>
+                    <td>${jogador.categoria}</td>
+                    <td></td>
+                </tr>
+            `).join('');
+
+            const janela = window.open('', '', 'width=900,height=900');
+            janela.document.write(`
+                <html>
+                <head>
+                    <title>Lista de Chamada - ${horarioSelecionado}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 32px; color: #222; }
+                        h1 { margin-bottom: 8px; }
+                        .subtitulo { margin-bottom: 24px; font-size: 16px; }
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #000; padding: 10px; text-align: left; }
+                        th { background: #f2f2f2; }
+                        td:last-child, th:last-child { width: 120px; text-align: center; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Lista de Chamada</h1>
+                    <div class="subtitulo">
+                        <strong>Turma:</strong> ${horarioSelecionado} <br>
+                        <strong>Data da aula:</strong> ${dataFormatada}
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Matrícula</th>
+                                <th>Categoria</th>
+                                <th>Presente</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${linhasTabela}
+                        </tbody>
+                    </table>
+                </body>
+                </html>
+            `);
+            janela.document.close();
+            setTimeout(() => {
+                janela.print();
+            }, 250);
         }
 
         function classificarIMC(imc) {
@@ -994,6 +1184,8 @@
                 await carregarJogadores();
                 atualizarTabela();
                 atualizarSeletorJogadores();
+                document.getElementById('dataChamada').valueAsDate = new Date();
+                atualizarListaChamada();
             } catch (erro) {
                 console.error('Erro ao inicializar aplicação:', erro);
                 const mensagemErro = erro?.message ? `\nDetalhes: ${erro.message}` : '';
