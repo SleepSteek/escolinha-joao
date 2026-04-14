@@ -515,6 +515,15 @@
                     throw error;
                 }
             } catch (erro) {
+                if (erro?.message && erro.message.includes("Could not find the 'altura' column")) {
+                    const { altura, peso, imc, ...jogadorSemDadosFisicos } = jogador;
+                    const { error } = await supabaseClient.from('jogadores').insert([jogadorSemDadosFisicos]);
+                    if (!error) {
+                        return;
+                    }
+                    console.error('Erro ao salvar jogador sem colunas fisicas:', error);
+                    throw error;
+                }
                 console.error('Erro ao salvar jogador:', erro);
                 alert('Não foi possível salvar o jogador no Supabase.');
                 throw erro;
@@ -531,6 +540,18 @@
                     throw error;
                 }
             } catch (erro) {
+                if (erro?.message && erro.message.includes("Could not find the 'altura' column")) {
+                    const { altura, peso, imc, ...jogadorSemDadosFisicos } = jogador;
+                    const { error } = await supabaseClient
+                        .from('jogadores')
+                        .update(jogadorSemDadosFisicos)
+                        .eq('id', jogador.id);
+                    if (!error) {
+                        return;
+                    }
+                    console.error('Erro ao atualizar jogador sem colunas fisicas:', error);
+                    throw error;
+                }
                 console.error('Erro ao atualizar jogador:', erro);
                 alert('Não foi possível atualizar o jogador no Supabase.');
                 throw erro;
