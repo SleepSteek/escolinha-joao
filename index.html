@@ -239,10 +239,92 @@
             color: #b0b0b0;
             margin-top: 10px;
         }
+        .login-gate {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(145deg, #1a1a1a 0%, #0d1a2e 100%);
+            padding: 20px;
+        }
+        .login-gate.visivel {
+            display: flex;
+        }
+        .login-box {
+            background: #2d2d2d;
+            padding: 32px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 100%;
+            border: 1px solid #444;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+        }
+        .login-box h2 {
+            color: #4da6ff;
+            margin-bottom: 8px;
+            border: none;
+            padding: 0;
+        }
+        .login-box .login-sub {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .login-erro {
+            color: #ff6b6b;
+            font-size: 14px;
+            min-height: 1.25em;
+            margin-bottom: 12px;
+        }
+        .login-info {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #888;
+            line-height: 1.5;
+        }
+        .login-info code {
+            background: #3d3d3d;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #b0d4ff;
+        }
+        .barra-sessao {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+        }
+        .barra-sessao button {
+            margin-top: 0;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="loginGate" class="login-gate visivel" aria-live="polite">
+        <div class="login-box">
+            <h2>Acesso restrito</h2>
+            <p class="login-sub">Informe usuário e senha conforme o arquivo enviado ao responsável.</p>
+            <p id="loginErro" class="login-erro" role="alert"></p>
+            <form id="formLogin">
+                <div class="form-group">
+                    <label for="loginUsuario">Usuário</label>
+                    <input type="text" id="loginUsuario" name="username" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginSenha">Senha</label>
+                    <input type="password" id="loginSenha" name="password" autocomplete="current-password" required>
+                </div>
+                <button type="submit">Entrar</button>
+            </form>
+            <p class="login-info">Quem recebeu o <code>credentials.txt</code> pode acessar; outras pessoas não possuem usuário e senha válidos.</p>
+        </div>
+    </div>
+
+    <div id="conteudoSite" class="container" style="display: none;">
+        <div class="barra-sessao">
+            <button type="button" class="secundario" id="btnSair">Sair</button>
+        </div>
         <h1>⚽ Associação Conexão Comunitária - Sistema de Cadastro e Resumo de Jogadores</h1>
 
         <!-- Navegação de Telas -->
@@ -563,6 +645,43 @@
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let jogadores = [];
         let jogadorEmEdicao = null;
+
+        const AUTH_STORAGE_KEY = 'escolinha_sessao_ok';
+        /* Hash SHA-256 de "usuario|senha" (mesmo formato do credentials.txt). Para gerar outro:
+           node -e "const c=require('crypto');const u='USUARIO';const p='SENHA';console.log(c.createHash('sha256').update(u+'|'+p,'utf8').digest('hex'));" */
+        const AUTH_HASH_HEX = '7fafca6b191c17c264f4d3683ddc4aebacbc0f2c03fdb95170ca7435a24d5b99';
+
+        async function sha256Hex(texto) {
+            if (!window.crypto || !window.crypto.subtle) {
+                throw new Error(
+                    'Abra a página via http://localhost ou HTTPS (arquivo direto no disco não permite criptografia do navegador).'
+                );
+            }
+            const enc = new TextEncoder();
+            const buf = await crypto.subtle.digest('SHA-256', enc.encode(texto));
+            return Array.from(new Uint8Array(buf))
+                .map((b) => b.toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        function mostrarApp() {
+            const gate = document.getElementById('loginGate');
+            const site = document.getElementById('conteudoSite');
+            if (gate) gate.classList.remove('visivel');
+            if (site) site.style.display = 'block';
+        }
+
+        function exibirLogin() {
+            const gate = document.getElementById('loginGate');
+            const site = document.getElementById('conteudoSite');
+            if (gate) gate.classList.add('visivel');
+            if (site) site.style.display = 'none';
+        }
+
+        async function credenciaisValidas(usuario, senha) {
+            const hash = await sha256Hex(`${usuario.trim()}|${senha}`);
+            return hash === AUTH_HASH_HEX;
+        }
 
         async function listarJogadoresDoBanco() {
             try {
@@ -1193,7 +1312,40 @@
             }
         }
 
-        inicializarApp();
+        document.getElementById('formLogin').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const err = document.getElementById('loginErro');
+            const u = document.getElementById('loginUsuario').value;
+            const s = document.getElementById('loginSenha').value;
+            err.textContent = '';
+            try {
+                const ok = await credenciaisValidas(u, s);
+                if (ok) {
+                    sessionStorage.setItem(AUTH_STORAGE_KEY, '1');
+                    mostrarApp();
+                    await inicializarApp();
+                } else {
+                    err.textContent = 'Usuário ou senha incorretos.';
+                }
+            } catch (erroLogin) {
+                err.textContent = erroLogin.message || 'Não foi possível validar o acesso.';
+            }
+        });
+
+        document.getElementById('btnSair').addEventListener('click', function () {
+            sessionStorage.removeItem(AUTH_STORAGE_KEY);
+            document.getElementById('loginSenha').value = '';
+            exibirLogin();
+        });
+
+        (async function initGate() {
+            if (sessionStorage.getItem(AUTH_STORAGE_KEY) === '1') {
+                mostrarApp();
+                await inicializarApp();
+            } else {
+                exibirLogin();
+            }
+        })();
     </script>
 </body>
 </html>
