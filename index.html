@@ -326,6 +326,27 @@
             margin-top: 10px;
             font-size: 14px;
         }
+        .lista-goleadores {
+            background: #303030;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 8px;
+        }
+        .item-goleador {
+            display: grid;
+            grid-template-columns: 1fr 110px;
+            gap: 10px;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #454545;
+        }
+        .item-goleador:last-child {
+            border-bottom: none;
+        }
+        .item-goleador label {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -626,7 +647,7 @@
                         </div>
                         <div class="form-group">
                             <label for="jogoCategoria">Categoria:</label>
-                            <select id="jogoCategoria" required>
+                            <select id="jogoCategoria" onchange="atualizarMarcacaoGolsPorCategoria()" required>
                                 <option value="">Selecione...</option>
                                 <option value="Sub-9">Sub-9</option>
                                 <option value="Sub-11">Sub-11</option>
@@ -649,8 +670,10 @@
                     </div>
                     <div class="form-row full">
                         <div class="form-group">
-                            <label for="jogoAutoresGols">Quem fez os gols:</label>
-                            <textarea id="jogoAutoresGols" rows="3" placeholder="Ex.: João (2), Pedro (1)" required></textarea>
+                            <label>Marcação de gols por jogador da categoria:</label>
+                            <div id="listaMarcacaoGols" class="lista-goleadores">
+                                <p class="texto-auxiliar" style="margin-top: 0;">Selecione uma categoria para listar os jogadores.</p>
+                            </div>
                         </div>
                     </div>
                     <button type="submit">Salvar Jogo</button>
@@ -668,6 +691,7 @@
                             <th>Categoria</th>
                             <th>Placar</th>
                             <th>Quem fez os gols</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -789,6 +813,67 @@
         </div>
     </div>
 
+    <!-- Modal para edição de jogo -->
+    <div id="modalEdicaoJogo" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Editar Jogo</h2>
+            </div>
+            <form id="formEdicaoJogo">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editJogoDia">Dia do Jogo:</label>
+                        <input type="date" id="editJogoDia" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editJogoCompeticao">Competição:</label>
+                        <input type="text" id="editJogoCompeticao" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editJogoAdversario">Adversário:</label>
+                        <input type="text" id="editJogoAdversario" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editJogoCategoria">Categoria:</label>
+                        <select id="editJogoCategoria" onchange="atualizarMarcacaoGolsEdicaoPorCategoria()" required>
+                            <option value="">Selecione...</option>
+                            <option value="Sub-9">Sub-9</option>
+                            <option value="Sub-11">Sub-11</option>
+                            <option value="Sub-13">Sub-13</option>
+                            <option value="Sub-15">Sub-15</option>
+                            <option value="Sub-17">Sub-17</option>
+                            <option value="Sub-20">Sub-20</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editJogoGolsFavor">Gols a favor:</label>
+                        <input type="number" id="editJogoGolsFavor" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editJogoGolsContra">Gols contra:</label>
+                        <input type="number" id="editJogoGolsContra" min="0" required>
+                    </div>
+                </div>
+                <div class="form-row full">
+                    <div class="form-group">
+                        <label>Marcação de gols por jogador da categoria:</label>
+                        <div id="listaMarcacaoGolsEdicao" class="lista-goleadores">
+                            <p class="texto-auxiliar" style="margin-top: 0;">Selecione uma categoria para listar os jogadores.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="botoes-acao">
+                    <button type="submit">Salvar Alterações</button>
+                    <button type="button" class="secundario" onclick="fecharModalJogo()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://yiebvvxommfwljnxtoop.supabase.co';
@@ -797,6 +882,7 @@
         let jogadores = [];
         let jogos = [];
         let jogadorEmEdicao = null;
+        let jogoEmEdicao = null;
 
         const AUTH_STORAGE_KEY = 'escolinha_sessao_ok';
         /* Hash SHA-256 de "usuario|senha" (mesmo formato do credentials.txt). Para gerar outro:
@@ -947,14 +1033,74 @@
                     throw error;
                 }
             } catch (erro) {
+                if (erro?.message && erro.message.includes("Could not find the 'competicao' column")) {
+                    const { competicao, ...jogoSemCompeticao } = jogo;
+                    const { error } = await supabaseClient.from('jogos').insert([jogoSemCompeticao]);
+                    if (!error) {
+                        return;
+                    }
+                    throw error;
+                }
                 console.error('Erro ao salvar jogo:', erro);
                 alert('Não foi possível salvar o jogo no Supabase.');
                 throw erro;
             }
         }
 
+        async function atualizarJogoNoBanco(jogo) {
+            try {
+                const { error } = await supabaseClient
+                    .from('jogos')
+                    .update(jogo)
+                    .eq('id', jogo.id);
+                if (error) {
+                    throw error;
+                }
+            } catch (erro) {
+                if (erro?.message && erro.message.includes("Could not find the 'competicao' column")) {
+                    const { competicao, ...jogoSemCompeticao } = jogo;
+                    const { error } = await supabaseClient
+                        .from('jogos')
+                        .update(jogoSemCompeticao)
+                        .eq('id', jogo.id);
+                    if (!error) {
+                        return;
+                    }
+                    throw error;
+                }
+                console.error('Erro ao atualizar jogo:', erro);
+                alert('Não foi possível atualizar o jogo no Supabase.');
+                throw erro;
+            }
+        }
+
+        async function removerJogoDoBanco(id) {
+            try {
+                const { error } = await supabaseClient.from('jogos').delete().eq('id', id);
+                if (error) {
+                    throw error;
+                }
+            } catch (erro) {
+                console.error('Erro ao remover jogo:', erro);
+                alert('Não foi possível remover o jogo no Supabase.');
+                throw erro;
+            }
+        }
+
+        function normalizarJogoRegistro(jogo) {
+            return {
+                ...jogo,
+                competicao: String(jogo.competicao || 'Não informada'),
+                adversario: String(jogo.adversario || 'Não informado'),
+                categoria: String(jogo.categoria || ''),
+                gols_favor: Number(jogo.gols_favor || 0),
+                gols_contra: Number(jogo.gols_contra || 0),
+                autores_gols: String(jogo.autores_gols || '')
+            };
+        }
+
         async function carregarJogos() {
-            jogos = await listarJogosDoBanco();
+            jogos = (await listarJogosDoBanco()).map(normalizarJogoRegistro);
             jogos.sort((a, b) => new Date(b.dia_jogo) - new Date(a.dia_jogo));
         }
 
@@ -1134,6 +1280,11 @@
             jogadorEmEdicao = null;
         }
 
+        function fecharModalJogo() {
+            document.getElementById('modalEdicaoJogo').classList.remove('ativo');
+            jogoEmEdicao = null;
+        }
+
         document.getElementById('formEdicao').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -1170,19 +1321,27 @@
 
         document.getElementById('formJogo').addEventListener('submit', async function(e) {
             e.preventDefault();
+            const golsFavor = Number(document.getElementById('jogoGolsFavor').value);
+            const { totalGolsMarcados, autoresTexto } = coletarAutoresGols();
+            if (golsFavor !== totalGolsMarcados) {
+                alert(`A soma dos gols por jogador (${totalGolsMarcados}) precisa ser igual aos gols a favor (${golsFavor}).`);
+                return;
+            }
+
             const jogo = {
                 dia_jogo: document.getElementById('jogoDia').value,
                 competicao: document.getElementById('jogoCompeticao').value.trim(),
                 adversario: document.getElementById('jogoAdversario').value.trim(),
                 categoria: document.getElementById('jogoCategoria').value,
-                gols_favor: Number(document.getElementById('jogoGolsFavor').value),
+                gols_favor: golsFavor,
                 gols_contra: Number(document.getElementById('jogoGolsContra').value),
-                autores_gols: document.getElementById('jogoAutoresGols').value.trim()
+                autores_gols: autoresTexto
             };
 
             try {
                 await salvarJogoNoBanco(jogo);
                 this.reset();
+                atualizarMarcacaoGolsPorCategoria();
                 alert('Jogo cadastrado com sucesso!');
                 await carregarJogos();
                 atualizarTabelaJogos();
@@ -1191,6 +1350,44 @@
             } catch (erro) {
                 const mensagemErro = erro?.message ? `\nDetalhes: ${erro.message}` : '';
                 alert(`Não foi possível cadastrar o jogo.${mensagemErro}`);
+            }
+        });
+
+        document.getElementById('formEdicaoJogo').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!jogoEmEdicao) {
+                return;
+            }
+
+            const golsFavor = Number(document.getElementById('editJogoGolsFavor').value);
+            const { totalGolsMarcados, autoresTexto } = coletarAutoresGolsEdicao();
+            if (golsFavor !== totalGolsMarcados) {
+                alert(`A soma dos gols por jogador (${totalGolsMarcados}) precisa ser igual aos gols a favor (${golsFavor}).`);
+                return;
+            }
+
+            const jogoAtualizado = {
+                ...jogoEmEdicao,
+                dia_jogo: document.getElementById('editJogoDia').value,
+                competicao: document.getElementById('editJogoCompeticao').value.trim(),
+                adversario: document.getElementById('editJogoAdversario').value.trim(),
+                categoria: document.getElementById('editJogoCategoria').value,
+                gols_favor: golsFavor,
+                gols_contra: Number(document.getElementById('editJogoGolsContra').value),
+                autores_gols: autoresTexto
+            };
+
+            try {
+                await atualizarJogoNoBanco(jogoAtualizado);
+                await carregarJogos();
+                fecharModalJogo();
+                atualizarTabelaJogos();
+                atualizarFiltrosRelatorioJogos();
+                gerarRelatorioJogos();
+                alert('Jogo atualizado com sucesso!');
+            } catch (erro) {
+                const mensagemErro = erro?.message ? `\nDetalhes: ${erro.message}` : '';
+                alert(`Não foi possível atualizar o jogo.${mensagemErro}`);
             }
         });
 
@@ -1204,6 +1401,174 @@
                 option.textContent = `${jogador.nome} (${jogador.posicao})`;
                 selecao.appendChild(option);
             });
+        }
+
+        function atualizarMarcacaoGolsPorCategoria() {
+            const categoria = document.getElementById('jogoCategoria')?.value;
+            const container = document.getElementById('listaMarcacaoGols');
+            if (!container) return;
+
+            if (!categoria) {
+                container.innerHTML = '<p class="texto-auxiliar" style="margin-top: 0;">Selecione uma categoria para listar os jogadores.</p>';
+                return;
+            }
+
+            const jogadoresDaCategoria = jogadores
+                .filter((jogador) => jogador.categoria === categoria)
+                .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+
+            if (jogadoresDaCategoria.length === 0) {
+                container.innerHTML = '<p class="texto-auxiliar" style="margin-top: 0;">Nenhum jogador cadastrado nesta categoria.</p>';
+                return;
+            }
+
+            container.innerHTML = jogadoresDaCategoria.map((jogador) => `
+                <div class="item-goleador">
+                    <label for="golsJogador${jogador.id}">${jogador.nome}</label>
+                    <input
+                        type="number"
+                        id="golsJogador${jogador.id}"
+                        class="input-gols-jogador"
+                        data-jogador-id="${jogador.id}"
+                        min="0"
+                        value="0"
+                        aria-label="Quantidade de gols de ${jogador.nome}"
+                    >
+                </div>
+            `).join('');
+        }
+
+        function coletarAutoresGols() {
+            const entradas = [...document.querySelectorAll('.input-gols-jogador')];
+            let totalGolsMarcados = 0;
+            const autores = [];
+
+            entradas.forEach((input) => {
+                const jogadorId = Number(input.dataset.jogadorId);
+                const gols = Number(input.value || 0);
+                if (gols > 0) {
+                    const jogador = jogadores.find((item) => item.id === jogadorId);
+                    if (jogador) {
+                        autores.push(`${jogador.nome} (${gols})`);
+                        totalGolsMarcados += gols;
+                    }
+                }
+            });
+
+            return {
+                totalGolsMarcados,
+                autoresTexto: autores.join(', ')
+            };
+        }
+
+        function parseAutoresGolsParaMapa(autoresTexto) {
+            const mapa = {};
+            if (!autoresTexto) return mapa;
+            const regex = /([^,]+?)\s*\((\d+)\)/g;
+            let match = regex.exec(autoresTexto);
+            while (match) {
+                const nome = match[1].trim().toLowerCase();
+                const gols = Number(match[2] || 0);
+                if (nome) {
+                    mapa[nome] = gols;
+                }
+                match = regex.exec(autoresTexto);
+            }
+            return mapa;
+        }
+
+        function atualizarMarcacaoGolsEdicaoPorCategoria() {
+            const categoria = document.getElementById('editJogoCategoria')?.value;
+            const container = document.getElementById('listaMarcacaoGolsEdicao');
+            if (!container) return;
+
+            if (!categoria) {
+                container.innerHTML = '<p class="texto-auxiliar" style="margin-top: 0;">Selecione uma categoria para listar os jogadores.</p>';
+                return;
+            }
+
+            const mapaAutores = parseAutoresGolsParaMapa(jogoEmEdicao?.autores_gols || '');
+            const jogadoresDaCategoria = jogadores
+                .filter((jogador) => jogador.categoria === categoria)
+                .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }));
+
+            if (jogadoresDaCategoria.length === 0) {
+                container.innerHTML = '<p class="texto-auxiliar" style="margin-top: 0;">Nenhum jogador cadastrado nesta categoria.</p>';
+                return;
+            }
+
+            container.innerHTML = jogadoresDaCategoria.map((jogador) => {
+                const gols = mapaAutores[jogador.nome.trim().toLowerCase()] || 0;
+                return `
+                    <div class="item-goleador">
+                        <label for="editGolsJogador${jogador.id}">${jogador.nome}</label>
+                        <input
+                            type="number"
+                            id="editGolsJogador${jogador.id}"
+                            class="input-gols-jogador-edicao"
+                            data-jogador-id="${jogador.id}"
+                            min="0"
+                            value="${gols}"
+                            aria-label="Quantidade de gols de ${jogador.nome}"
+                        >
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function coletarAutoresGolsEdicao() {
+            const entradas = [...document.querySelectorAll('.input-gols-jogador-edicao')];
+            let totalGolsMarcados = 0;
+            const autores = [];
+
+            entradas.forEach((input) => {
+                const jogadorId = Number(input.dataset.jogadorId);
+                const gols = Number(input.value || 0);
+                if (gols > 0) {
+                    const jogador = jogadores.find((item) => item.id === jogadorId);
+                    if (jogador) {
+                        autores.push(`${jogador.nome} (${gols})`);
+                        totalGolsMarcados += gols;
+                    }
+                }
+            });
+
+            return {
+                totalGolsMarcados,
+                autoresTexto: autores.join(', ')
+            };
+        }
+
+        function abrirEdicaoJogo(id) {
+            jogoEmEdicao = jogos.find((j) => j.id === id);
+            if (!jogoEmEdicao) {
+                return;
+            }
+            document.getElementById('editJogoDia').value = jogoEmEdicao.dia_jogo || '';
+            document.getElementById('editJogoCompeticao').value = jogoEmEdicao.competicao || '';
+            document.getElementById('editJogoAdversario').value = jogoEmEdicao.adversario || '';
+            document.getElementById('editJogoCategoria').value = jogoEmEdicao.categoria || '';
+            document.getElementById('editJogoGolsFavor').value = Number(jogoEmEdicao.gols_favor || 0);
+            document.getElementById('editJogoGolsContra').value = Number(jogoEmEdicao.gols_contra || 0);
+            atualizarMarcacaoGolsEdicaoPorCategoria();
+            document.getElementById('modalEdicaoJogo').classList.add('ativo');
+        }
+
+        async function removerJogo(id) {
+            if (!confirm('Tem certeza que deseja remover este jogo?')) {
+                return;
+            }
+            try {
+                await removerJogoDoBanco(id);
+                await carregarJogos();
+                atualizarTabelaJogos();
+                atualizarFiltrosRelatorioJogos();
+                gerarRelatorioJogos();
+                alert('Jogo removido com sucesso!');
+            } catch (erro) {
+                const mensagemErro = erro?.message ? `\nDetalhes: ${erro.message}` : '';
+                alert(`Não foi possível remover o jogo.${mensagemErro}`);
+            }
         }
 
         function atualizarTabelaJogos() {
@@ -1223,6 +1588,10 @@
                     <td>${jogo.categoria || '-'}</td>
                     <td>${Number(jogo.gols_favor || 0)} x ${Number(jogo.gols_contra || 0)}</td>
                     <td>${jogo.autores_gols || '-'}</td>
+                    <td>
+                        <button class="editar" onclick="abrirEdicaoJogo(${jogo.id})">Editar</button>
+                        <button class="remover" onclick="removerJogo(${jogo.id})">Remover</button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1598,6 +1967,7 @@
                 atualizarTabela();
                 atualizarTabelaJogos();
                 atualizarSeletorJogadores();
+                atualizarMarcacaoGolsPorCategoria();
                 atualizarFiltrosRelatorioJogos();
                 gerarRelatorioJogos();
                 document.getElementById('dataChamada').valueAsDate = new Date();
