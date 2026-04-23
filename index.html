@@ -387,6 +387,9 @@
         .barra-derrotas {
             background: linear-gradient(90deg, #9e2a2a 0%, #d9534f 100%);
         }
+        .barra-empates {
+            background: linear-gradient(90deg, #8a7a1f 0%, #d6be3f 100%);
+        }
         .detalhes-avancados {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -810,7 +813,7 @@
                 <p id="textoRelatorioJogos" class="texto-auxiliar">Nenhum jogo encontrado com os filtros atuais.</p>
 
                 <div class="grafico-vd">
-                    <h3>Gráfico de Vitórias x Derrotas</h3>
+                    <h3>Gráfico de Vitórias x Empates x Derrotas</h3>
                     <div class="barra-grafico">
                         <div class="legenda">
                             <span>Vitórias</span>
@@ -818,6 +821,15 @@
                         </div>
                         <div class="trilho">
                             <div id="relBarraVitorias" class="preenchimento barra-vitorias"></div>
+                        </div>
+                    </div>
+                    <div class="barra-grafico">
+                        <div class="legenda">
+                            <span>Empates</span>
+                            <span id="relEmpatesLegenda">0 (0%)</span>
+                        </div>
+                        <div class="trilho">
+                            <div id="relBarraEmpates" class="preenchimento barra-empates"></div>
                         </div>
                     </div>
                     <div class="barra-grafico" style="margin-bottom: 0;">
@@ -1745,6 +1757,7 @@
             const golsContra = jogosFiltrados.reduce((acc, jogo) => acc + Number(jogo.gols_contra || 0), 0);
             const saldo = golsFavor - golsContra;
             const vitorias = jogosFiltrados.filter((jogo) => Number(jogo.gols_favor || 0) > Number(jogo.gols_contra || 0)).length;
+            const empates = jogosFiltrados.filter((jogo) => Number(jogo.gols_favor || 0) === Number(jogo.gols_contra || 0)).length;
             const derrotas = jogosFiltrados.filter((jogo) => Number(jogo.gols_favor || 0) < Number(jogo.gols_contra || 0)).length;
 
             document.getElementById('relTotalJogos').textContent = String(totalJogos);
@@ -1753,10 +1766,13 @@
             document.getElementById('relSaldoGols').textContent = String(saldo);
 
             const percVitorias = totalJogos ? ((vitorias / totalJogos) * 100) : 0;
+            const percEmpates = totalJogos ? ((empates / totalJogos) * 100) : 0;
             const percDerrotas = totalJogos ? ((derrotas / totalJogos) * 100) : 0;
             document.getElementById('relVitoriasLegenda').textContent = `${vitorias} (${percVitorias.toFixed(1)}%)`;
+            document.getElementById('relEmpatesLegenda').textContent = `${empates} (${percEmpates.toFixed(1)}%)`;
             document.getElementById('relDerrotasLegenda').textContent = `${derrotas} (${percDerrotas.toFixed(1)}%)`;
             document.getElementById('relBarraVitorias').style.width = `${percVitorias.toFixed(1)}%`;
+            document.getElementById('relBarraEmpates').style.width = `${percEmpates.toFixed(1)}%`;
             document.getElementById('relBarraDerrotas').style.width = `${percDerrotas.toFixed(1)}%`;
 
             const texto = document.getElementById('textoRelatorioJogos');
