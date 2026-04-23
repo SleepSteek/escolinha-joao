@@ -347,6 +347,68 @@
         .item-goleador label {
             margin-bottom: 0;
         }
+        .grafico-vd {
+            background: #323232;
+            border: 1px solid #4a4a4a;
+            border-radius: 8px;
+            padding: 14px;
+            margin-top: 16px;
+        }
+        .grafico-vd h3 {
+            color: #4da6ff;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        .barra-grafico {
+            margin-bottom: 12px;
+        }
+        .barra-grafico .legenda {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #c8c8c8;
+        }
+        .barra-grafico .trilho {
+            width: 100%;
+            height: 16px;
+            border-radius: 999px;
+            background: #222;
+            overflow: hidden;
+        }
+        .barra-grafico .preenchimento {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .barra-vitorias {
+            background: linear-gradient(90deg, #1f8a4c 0%, #2ec86f 100%);
+        }
+        .barra-derrotas {
+            background: linear-gradient(90deg, #9e2a2a 0%, #d9534f 100%);
+        }
+        .detalhes-avancados {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .detalhe-box {
+            background: #323232;
+            border: 1px solid #4a4a4a;
+            border-radius: 8px;
+            padding: 14px;
+        }
+        .detalhe-box h4 {
+            color: #9bb7d6;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .detalhe-box p {
+            color: #f2f2f2;
+            margin: 0;
+            line-height: 1.45;
+        }
     </style>
 </head>
 <body>
@@ -746,6 +808,51 @@
                 </div>
 
                 <p id="textoRelatorioJogos" class="texto-auxiliar">Nenhum jogo encontrado com os filtros atuais.</p>
+
+                <div class="grafico-vd">
+                    <h3>Gráfico de Vitórias x Derrotas</h3>
+                    <div class="barra-grafico">
+                        <div class="legenda">
+                            <span>Vitórias</span>
+                            <span id="relVitoriasLegenda">0 (0%)</span>
+                        </div>
+                        <div class="trilho">
+                            <div id="relBarraVitorias" class="preenchimento barra-vitorias"></div>
+                        </div>
+                    </div>
+                    <div class="barra-grafico" style="margin-bottom: 0;">
+                        <div class="legenda">
+                            <span>Derrotas</span>
+                            <span id="relDerrotasLegenda">0 (0%)</span>
+                        </div>
+                        <div class="trilho">
+                            <div id="relBarraDerrotas" class="preenchimento barra-derrotas"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detalhes-avancados">
+                    <div class="detalhe-box">
+                        <h4>Maior Vitória</h4>
+                        <p id="relMaiorVitoria">-</p>
+                    </div>
+                    <div class="detalhe-box">
+                        <h4>Maior Derrota</h4>
+                        <p id="relMaiorDerrota">-</p>
+                    </div>
+                    <div class="detalhe-box">
+                        <h4>Média de Gols por Jogo</h4>
+                        <p id="relMediaGols">-</p>
+                    </div>
+                    <div class="detalhe-box">
+                        <h4>Adversário que mais fez gols por partida</h4>
+                        <p id="relAdvMaisFez">-</p>
+                    </div>
+                    <div class="detalhe-box">
+                        <h4>Adversário que mais levou gols por partida</h4>
+                        <p id="relAdvMaisLevou">-</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1637,20 +1744,104 @@
             const golsFavor = jogosFiltrados.reduce((acc, jogo) => acc + Number(jogo.gols_favor || 0), 0);
             const golsContra = jogosFiltrados.reduce((acc, jogo) => acc + Number(jogo.gols_contra || 0), 0);
             const saldo = golsFavor - golsContra;
+            const vitorias = jogosFiltrados.filter((jogo) => Number(jogo.gols_favor || 0) > Number(jogo.gols_contra || 0)).length;
+            const derrotas = jogosFiltrados.filter((jogo) => Number(jogo.gols_favor || 0) < Number(jogo.gols_contra || 0)).length;
 
             document.getElementById('relTotalJogos').textContent = String(totalJogos);
             document.getElementById('relGolsFavor').textContent = String(golsFavor);
             document.getElementById('relGolsContra').textContent = String(golsContra);
             document.getElementById('relSaldoGols').textContent = String(saldo);
 
+            const percVitorias = totalJogos ? ((vitorias / totalJogos) * 100) : 0;
+            const percDerrotas = totalJogos ? ((derrotas / totalJogos) * 100) : 0;
+            document.getElementById('relVitoriasLegenda').textContent = `${vitorias} (${percVitorias.toFixed(1)}%)`;
+            document.getElementById('relDerrotasLegenda').textContent = `${derrotas} (${percDerrotas.toFixed(1)}%)`;
+            document.getElementById('relBarraVitorias').style.width = `${percVitorias.toFixed(1)}%`;
+            document.getElementById('relBarraDerrotas').style.width = `${percDerrotas.toFixed(1)}%`;
+
             const texto = document.getElementById('textoRelatorioJogos');
             if (!texto) return;
             if (totalJogos === 0) {
                 texto.textContent = 'Nenhum jogo encontrado com os filtros atuais.';
+                document.getElementById('relMaiorVitoria').textContent = '-';
+                document.getElementById('relMaiorDerrota').textContent = '-';
+                document.getElementById('relMediaGols').textContent = '-';
+                document.getElementById('relAdvMaisFez').textContent = '-';
+                document.getElementById('relAdvMaisLevou').textContent = '-';
                 return;
             }
+
+            const maiorVitoriaJogo = jogosFiltrados.reduce((melhor, jogo) => {
+                const saldoJogo = Number(jogo.gols_favor || 0) - Number(jogo.gols_contra || 0);
+                if (!melhor || saldoJogo > melhor.saldo) {
+                    return { jogo, saldo: saldoJogo };
+                }
+                return melhor;
+            }, null);
+
+            const maiorDerrotaJogo = jogosFiltrados.reduce((pior, jogo) => {
+                const saldoJogo = Number(jogo.gols_favor || 0) - Number(jogo.gols_contra || 0);
+                if (!pior || saldoJogo < pior.saldo) {
+                    return { jogo, saldo: saldoJogo };
+                }
+                return pior;
+            }, null);
+
+            const agrupadoPorAdversario = {};
+            jogosFiltrados.forEach((jogo) => {
+                const nome = jogo.adversario || 'Não informado';
+                if (!agrupadoPorAdversario[nome]) {
+                    agrupadoPorAdversario[nome] = { jogos: 0, golsFavor: 0, golsContra: 0 };
+                }
+                agrupadoPorAdversario[nome].jogos += 1;
+                agrupadoPorAdversario[nome].golsFavor += Number(jogo.gols_favor || 0);
+                agrupadoPorAdversario[nome].golsContra += Number(jogo.gols_contra || 0);
+            });
+
+            const estatisticasAdversarios = Object.entries(agrupadoPorAdversario).map(([nome, dados]) => ({
+                nome,
+                mediaFez: dados.golsContra / dados.jogos,
+                mediaLevou: dados.golsFavor / dados.jogos
+            }));
+            const adversarioMaisFez = estatisticasAdversarios.reduce((maior, atual) => {
+                if (!maior || atual.mediaFez > maior.mediaFez) {
+                    return atual;
+                }
+                return maior;
+            }, null);
+            const adversarioMaisLevou = estatisticasAdversarios.reduce((maior, atual) => {
+                if (!maior || atual.mediaLevou > maior.mediaLevou) {
+                    return atual;
+                }
+                return maior;
+            }, null);
+
             const mediaFavor = (golsFavor / totalJogos).toFixed(2);
             const mediaContra = (golsContra / totalJogos).toFixed(2);
+            const mediaTotal = ((golsFavor + golsContra) / totalJogos).toFixed(2);
+            document.getElementById('relMediaGols').textContent = `Favor: ${mediaFavor} | Contra: ${mediaContra} | Total: ${mediaTotal}`;
+
+            if (maiorVitoriaJogo && maiorVitoriaJogo.saldo > 0) {
+                document.getElementById('relMaiorVitoria').textContent =
+                    `${maiorVitoriaJogo.jogo.adversario || '-'} (${Number(maiorVitoriaJogo.jogo.gols_favor || 0)} x ${Number(maiorVitoriaJogo.jogo.gols_contra || 0)})`;
+            } else {
+                document.getElementById('relMaiorVitoria').textContent = 'Sem vitória no período filtrado.';
+            }
+
+            if (maiorDerrotaJogo && maiorDerrotaJogo.saldo < 0) {
+                document.getElementById('relMaiorDerrota').textContent =
+                    `${maiorDerrotaJogo.jogo.adversario || '-'} (${Number(maiorDerrotaJogo.jogo.gols_favor || 0)} x ${Number(maiorDerrotaJogo.jogo.gols_contra || 0)})`;
+            } else {
+                document.getElementById('relMaiorDerrota').textContent = 'Sem derrota no período filtrado.';
+            }
+
+            document.getElementById('relAdvMaisFez').textContent = adversarioMaisFez
+                ? `${adversarioMaisFez.nome} (${adversarioMaisFez.mediaFez.toFixed(2)} gol(s)/partida)`
+                : '-';
+            document.getElementById('relAdvMaisLevou').textContent = adversarioMaisLevou
+                ? `${adversarioMaisLevou.nome} (${adversarioMaisLevou.mediaLevou.toFixed(2)} gol(s)/partida)`
+                : '-';
+
             texto.textContent = `Média por jogo: ${mediaFavor} gols a favor e ${mediaContra} gols contra.`;
         }
 
