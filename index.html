@@ -298,6 +298,34 @@
         .barra-sessao button {
             margin-top: 0;
         }
+        .cards-relatorio {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin: 16px 0 8px;
+        }
+        .card-relatorio {
+            background: #3d3d3d;
+            border: 1px solid #4a4a4a;
+            border-left: 4px solid #4da6ff;
+            border-radius: 8px;
+            padding: 14px;
+        }
+        .card-relatorio .rotulo {
+            color: #9bb7d6;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+        .card-relatorio .valor {
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .texto-auxiliar {
+            color: #a8a8a8;
+            margin-top: 10px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -333,6 +361,8 @@
             <button class="btn-tela" onclick="abrirTela('jogadores', this)">2. Listar Jogadores</button>
             <button class="btn-tela" onclick="abrirTela('resumo', this)">3. Gerar Resumo</button>
             <button class="btn-tela" onclick="abrirTela('chamada', this)">4. Lista de Chamada</button>
+            <button class="btn-tela" onclick="abrirTela('jogos', this)">5. Cadastrar Jogos</button>
+            <button class="btn-tela" onclick="abrirTela('relatorioJogos', this)">6. Relatório de Jogos</button>
         </div>
 
         <!-- TELA 1: Cadastro -->
@@ -573,6 +603,127 @@
                 </table>
             </div>
         </div>
+
+        <!-- TELA 5: Cadastro de Jogos -->
+        <div id="jogos" class="tela">
+            <div class="section">
+                <h2>Cadastrar Jogo</h2>
+                <form id="formJogo">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="jogoDia">Dia do Jogo:</label>
+                            <input type="date" id="jogoDia" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="jogoCompeticao">Competição:</label>
+                            <input type="text" id="jogoCompeticao" placeholder="Ex.: Copa da Cidade" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="jogoAdversario">Adversário:</label>
+                            <input type="text" id="jogoAdversario" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="jogoCategoria">Categoria:</label>
+                            <select id="jogoCategoria" required>
+                                <option value="">Selecione...</option>
+                                <option value="Sub-9">Sub-9</option>
+                                <option value="Sub-11">Sub-11</option>
+                                <option value="Sub-13">Sub-13</option>
+                                <option value="Sub-15">Sub-15</option>
+                                <option value="Sub-17">Sub-17</option>
+                                <option value="Sub-20">Sub-20</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="jogoGolsFavor">Gols a favor:</label>
+                            <input type="number" id="jogoGolsFavor" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="jogoGolsContra">Gols contra:</label>
+                            <input type="number" id="jogoGolsContra" min="0" required>
+                        </div>
+                    </div>
+                    <div class="form-row full">
+                        <div class="form-group">
+                            <label for="jogoAutoresGols">Quem fez os gols:</label>
+                            <textarea id="jogoAutoresGols" rows="3" placeholder="Ex.: João (2), Pedro (1)" required></textarea>
+                        </div>
+                    </div>
+                    <button type="submit">Salvar Jogo</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <h2>Jogos Cadastrados</h2>
+                <table id="tabelaJogos">
+                    <thead>
+                        <tr>
+                            <th>Dia do Jogo</th>
+                            <th>Competição</th>
+                            <th>Adversário</th>
+                            <th>Categoria</th>
+                            <th>Placar</th>
+                            <th>Quem fez os gols</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TELA 6: Relatório de Jogos -->
+        <div id="relatorioJogos" class="tela">
+            <div class="section">
+                <h2>Relatório de Competições, Adversários e Categorias</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="filtroCompeticaoJogos">Competição:</label>
+                        <select id="filtroCompeticaoJogos" onchange="gerarRelatorioJogos()">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filtroAdversarioJogos">Adversário:</label>
+                        <select id="filtroAdversarioJogos" onchange="gerarRelatorioJogos()">
+                            <option value="">Todos</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="filtroCategoriaJogos">Categoria:</label>
+                        <select id="filtroCategoriaJogos" onchange="gerarRelatorioJogos()">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="cards-relatorio">
+                    <div class="card-relatorio">
+                        <div class="rotulo">Total de Jogos</div>
+                        <div class="valor" id="relTotalJogos">0</div>
+                    </div>
+                    <div class="card-relatorio">
+                        <div class="rotulo">Gols a Favor</div>
+                        <div class="valor" id="relGolsFavor">0</div>
+                    </div>
+                    <div class="card-relatorio">
+                        <div class="rotulo">Gols Contra</div>
+                        <div class="valor" id="relGolsContra">0</div>
+                    </div>
+                    <div class="card-relatorio">
+                        <div class="rotulo">Saldo de Gols</div>
+                        <div class="valor" id="relSaldoGols">0</div>
+                    </div>
+                </div>
+
+                <p id="textoRelatorioJogos" class="texto-auxiliar">Nenhum jogo encontrado com os filtros atuais.</p>
+            </div>
+        </div>
     </div>
 
     <!-- Modal para Edição -->
@@ -644,6 +795,7 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpZWJ2dnhvbW1md2xqbnh0b29wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxODY0NzcsImV4cCI6MjA5MTc2MjQ3N30.t3IjsedOeoeKo93SaWe6SRvnWv8axSgeR-OzUp_QyXI';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let jogadores = [];
+        let jogos = [];
         let jogadorEmEdicao = null;
 
         const AUTH_STORAGE_KEY = 'escolinha_sessao_ok';
@@ -775,6 +927,37 @@
             jogadores.sort((a, b) => b.id - a.id);
         }
 
+        async function listarJogosDoBanco() {
+            try {
+                const { data, error } = await supabaseClient.from('jogos').select('*');
+                if (error) {
+                    throw error;
+                }
+                return data || [];
+            } catch (erro) {
+                console.error('Erro ao listar jogos:', erro);
+                throw erro;
+            }
+        }
+
+        async function salvarJogoNoBanco(jogo) {
+            try {
+                const { error } = await supabaseClient.from('jogos').insert([jogo]);
+                if (error) {
+                    throw error;
+                }
+            } catch (erro) {
+                console.error('Erro ao salvar jogo:', erro);
+                alert('Não foi possível salvar o jogo no Supabase.');
+                throw erro;
+            }
+        }
+
+        async function carregarJogos() {
+            jogos = await listarJogosDoBanco();
+            jogos.sort((a, b) => new Date(b.dia_jogo) - new Date(a.dia_jogo));
+        }
+
         function normalizarMatricula(matricula) {
             return String(matricula || '').trim().toLowerCase();
         }
@@ -804,6 +987,11 @@
                 atualizarSeletorJogadores();
             } else if (nomeTela === 'chamada') {
                 atualizarListaChamada();
+            } else if (nomeTela === 'jogos') {
+                atualizarTabelaJogos();
+            } else if (nomeTela === 'relatorioJogos') {
+                atualizarFiltrosRelatorioJogos();
+                gerarRelatorioJogos();
             }
         }
 
@@ -980,6 +1168,32 @@
             }
         });
 
+        document.getElementById('formJogo').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const jogo = {
+                dia_jogo: document.getElementById('jogoDia').value,
+                competicao: document.getElementById('jogoCompeticao').value.trim(),
+                adversario: document.getElementById('jogoAdversario').value.trim(),
+                categoria: document.getElementById('jogoCategoria').value,
+                gols_favor: Number(document.getElementById('jogoGolsFavor').value),
+                gols_contra: Number(document.getElementById('jogoGolsContra').value),
+                autores_gols: document.getElementById('jogoAutoresGols').value.trim()
+            };
+
+            try {
+                await salvarJogoNoBanco(jogo);
+                this.reset();
+                alert('Jogo cadastrado com sucesso!');
+                await carregarJogos();
+                atualizarTabelaJogos();
+                atualizarFiltrosRelatorioJogos();
+                gerarRelatorioJogos();
+            } catch (erro) {
+                const mensagemErro = erro?.message ? `\nDetalhes: ${erro.message}` : '';
+                alert(`Não foi possível cadastrar o jogo.${mensagemErro}`);
+            }
+        });
+
         function atualizarSeletorJogadores() {
             const selecao = document.getElementById('selecionarJogador');
             selecao.innerHTML = '<option value="">Escolha um jogador...</option>';
@@ -990,6 +1204,85 @@
                 option.textContent = `${jogador.nome} (${jogador.posicao})`;
                 selecao.appendChild(option);
             });
+        }
+
+        function atualizarTabelaJogos() {
+            const tbody = document.querySelector('#tabelaJogos tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            jogos.forEach(jogo => {
+                const tr = document.createElement('tr');
+                const diaFormatado = jogo.dia_jogo
+                    ? new Date(`${jogo.dia_jogo}T00:00:00`).toLocaleDateString('pt-BR')
+                    : '-';
+                tr.innerHTML = `
+                    <td>${diaFormatado}</td>
+                    <td>${jogo.competicao || '-'}</td>
+                    <td>${jogo.adversario || '-'}</td>
+                    <td>${jogo.categoria || '-'}</td>
+                    <td>${Number(jogo.gols_favor || 0)} x ${Number(jogo.gols_contra || 0)}</td>
+                    <td>${jogo.autores_gols || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function popularSelectComValoresUnicos(selectId, valores, rotuloTodos) {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            const valorAtual = select.value;
+            select.innerHTML = `<option value="">${rotuloTodos}</option>`;
+            [...new Set(valores.filter(Boolean))]
+                .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }))
+                .forEach(valor => {
+                    const option = document.createElement('option');
+                    option.value = valor;
+                    option.textContent = valor;
+                    select.appendChild(option);
+                });
+            if ([...select.options].some(o => o.value === valorAtual)) {
+                select.value = valorAtual;
+            }
+        }
+
+        function atualizarFiltrosRelatorioJogos() {
+            popularSelectComValoresUnicos('filtroCompeticaoJogos', jogos.map(j => j.competicao), 'Todas');
+            popularSelectComValoresUnicos('filtroAdversarioJogos', jogos.map(j => j.adversario), 'Todos');
+            popularSelectComValoresUnicos('filtroCategoriaJogos', jogos.map(j => j.categoria), 'Todas');
+        }
+
+        function gerarRelatorioJogos() {
+            const competicao = document.getElementById('filtroCompeticaoJogos')?.value || '';
+            const adversario = document.getElementById('filtroAdversarioJogos')?.value || '';
+            const categoria = document.getElementById('filtroCategoriaJogos')?.value || '';
+
+            const jogosFiltrados = jogos.filter(jogo => {
+                const competicaoOk = !competicao || jogo.competicao === competicao;
+                const adversarioOk = !adversario || jogo.adversario === adversario;
+                const categoriaOk = !categoria || jogo.categoria === categoria;
+                return competicaoOk && adversarioOk && categoriaOk;
+            });
+
+            const totalJogos = jogosFiltrados.length;
+            const golsFavor = jogosFiltrados.reduce((acc, jogo) => acc + Number(jogo.gols_favor || 0), 0);
+            const golsContra = jogosFiltrados.reduce((acc, jogo) => acc + Number(jogo.gols_contra || 0), 0);
+            const saldo = golsFavor - golsContra;
+
+            document.getElementById('relTotalJogos').textContent = String(totalJogos);
+            document.getElementById('relGolsFavor').textContent = String(golsFavor);
+            document.getElementById('relGolsContra').textContent = String(golsContra);
+            document.getElementById('relSaldoGols').textContent = String(saldo);
+
+            const texto = document.getElementById('textoRelatorioJogos');
+            if (!texto) return;
+            if (totalJogos === 0) {
+                texto.textContent = 'Nenhum jogo encontrado com os filtros atuais.';
+                return;
+            }
+            const mediaFavor = (golsFavor / totalJogos).toFixed(2);
+            const mediaContra = (golsContra / totalJogos).toFixed(2);
+            texto.textContent = `Média por jogo: ${mediaFavor} gols a favor e ${mediaContra} gols contra.`;
         }
 
         function carregarResumo() {
@@ -1301,8 +1594,12 @@
         async function inicializarApp() {
             try {
                 await carregarJogadores();
+                await carregarJogos();
                 atualizarTabela();
+                atualizarTabelaJogos();
                 atualizarSeletorJogadores();
+                atualizarFiltrosRelatorioJogos();
+                gerarRelatorioJogos();
                 document.getElementById('dataChamada').valueAsDate = new Date();
                 atualizarListaChamada();
             } catch (erro) {
